@@ -15,11 +15,11 @@
       <div class="mb-8 hbc-dashboard-header">
         <div class="hbc-header-content">
           <div class="hbc-header-text">
-            <h1 class="text-3xl font-bold text-gray-900">Host Dashboard</h1>
-            <p class="mt-2 text-gray-600">Manage your meetings, bookings, and join links</p>
+            <h1 class="text-3xl font-bold text-gray-900">{{ __('host_dashboard') }}</h1>
+            <p class="mt-2 text-gray-600">{{ __('manage_meetings_bookings') }}</p>
           </div>
           <div class="hbc-header-actions">
-            <button @click="handleLogout" class="hbc-logout-btn">Logout</button>
+            <button @click="handleLogout" class="hbc-logout-btn">{{ __('logout') }}</button>
           </div>
         </div>
       </div>
@@ -46,7 +46,7 @@
               </div>
               <div class="ml-4">
                 <p class="text-2xl font-semibold text-gray-900">{{ stats.today_meetings || 0 }}</p>
-                <p class="text-sm text-gray-600">Today's Meetings</p>
+                <p class="text-sm text-gray-600">{{ __('todays_meetings') }}</p>
               </div>
             </div>
           </div>
@@ -64,7 +64,7 @@
               </div>
               <div class="ml-4">
                 <p class="text-2xl font-semibold text-gray-900">{{ stats.upcoming_meetings || 0 }}</p>
-                <p class="text-sm text-gray-600">Upcoming</p>
+                <p class="text-sm text-gray-600">{{ __('upcoming') }}</p>
               </div>
             </div>
           </div>
@@ -82,7 +82,7 @@
               </div>
               <div class="ml-4">
                 <p class="text-2xl font-semibold text-gray-900">{{ stats.completed_meetings || 0 }}</p>
-                <p class="text-sm text-gray-600">Completed</p>
+                <p class="text-sm text-gray-600">{{ __('completed') }}</p>
               </div>
             </div>
           </div>
@@ -100,7 +100,7 @@
               </div>
               <div class="ml-4">
                 <p class="text-2xl font-semibold text-gray-900">{{ stats.active_join_links || 0 }}</p>
-                <p class="text-sm text-gray-600">Active Links</p>
+                <p class="text-sm text-gray-600">{{ __('active_links') }}</p>
               </div>
             </div>
           </div>
@@ -131,12 +131,12 @@
         <!-- Bookings Tab -->
         <div v-show="activeTab === 'bookings'" class="p-6">
           <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-medium text-gray-900">Bookings</h3>
+            <h3 class="text-lg font-medium text-gray-900">{{ __('bookings') }}</h3>
             <button @click="loadBookings(activeFilter)" class="btn-primary">
               <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
               </svg>
-              Refresh
+              {{ __('refresh') }}
             </button>
           </div>
 
@@ -184,9 +184,9 @@
         <!-- Join Links Tab -->
         <div v-show="activeTab === 'join-links'" class="p-6">
           <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-medium text-gray-900">Join Links Management</h3>
+            <h3 class="text-lg font-medium text-gray-900">{{ __('join_links_management') }}</h3>
             <button @click="openJoinLinkModal" class="btn-primary">
-              Generate New Link
+              {{ __('generate_new_link') }}
             </button>
           </div>
 
@@ -200,12 +200,12 @@
         <!-- Profile Tab -->
         <div v-show="activeTab === 'profile'" class="p-6">
           <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-medium text-gray-900">Profile Settings</h3>
+            <h3 class="text-lg font-medium text-gray-900">{{ __('profile_settings') }}</h3>
             <button @click="openProfileModal" class="btn-primary">
               <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
               </svg>
-              Edit Profile
+              {{ __('edit_profile') }}
             </button>
           </div>
 
@@ -240,7 +240,7 @@
         <!-- History Tab -->
         <div v-show="activeTab === 'history'" class="p-6">
           <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-medium text-gray-900">Meeting History</h3>
+            <h3 class="text-lg font-medium text-gray-900">{{ __('meeting_history') }}</h3>
             <button @click="loadBookings('history')" class="btn-primary">
               <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
@@ -285,6 +285,7 @@
 import { ref, reactive, onMounted, watch, inject } from 'vue'
 import { hostAPI } from '../utils/api.js'
 import { formatDateTime, getStatusClass, getStatusText, handleApiError, copyToClipboard } from '../utils/helpers.js'
+import { __ } from '../utils/i18n.js'
 import BookingsList from './BookingsList.vue'
 import JoinLinksList from './JoinLinksList.vue'
 import BookingDetailsModal from './modals/BookingDetailsModal.vue'
@@ -327,9 +328,9 @@ export default {
 
     // Tab configuration
     const tabs = [
-      { id: 'bookings', name: 'Bookings' },
-      { id: 'join-links', name: 'Join Links' },
-      { id: 'profile', name: 'Profile' }
+      { id: 'bookings', name: __('bookings') },
+      { id: 'join-links', name: __('join_links') },
+      { id: 'profile', name: __('profile') }
     ]
 
     // Filter configuration
@@ -680,7 +681,8 @@ export default {
       // Utilities
       formatDateTime,
       getStatusClass,
-      getStatusText
+      getStatusText,
+      __
     }
   }
 }

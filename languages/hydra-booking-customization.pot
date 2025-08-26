@@ -1,0 +1,331 @@
+# Copyright (C) 2024 Hydra Booking Customization
+# This file is distributed under the same license as the Hydra Booking Customization plugin.
+msgid ""
+msgstr ""
+"Project-Id-Version: Hydra Booking Customization 1.0.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/hydra-booking-customization\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2024-12-26T12:00:00+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: Manual\n"
+"X-Domain: hydra-booking-customization\n"
+
+#: hydra-booking-customization.php:45
+msgid "This plugin requires PHP version %s or higher."
+msgstr ""
+
+#: hydra-booking-customization.php:52
+msgid "This plugin requires WordPress version %s or higher."
+msgstr ""
+
+#: hydra-booking-customization.php:59
+msgid "This plugin requires the Hydra Booking plugin to be installed and activated."
+msgstr ""
+
+#: hydra-booking-customization.php:66
+msgid "Hydra Booking plugin version %s or higher is required."
+msgstr ""
+
+#: hydra-booking-customization.php:200
+msgid "Login to access your dashboard"
+msgstr ""
+
+#: hydra-booking-customization.php:201
+msgid "Username or Email"
+msgstr ""
+
+#: hydra-booking-customization.php:202
+msgid "Password"
+msgstr ""
+
+#: hydra-booking-customization.php:203
+msgid "Log In"
+msgstr ""
+
+#: hydra-booking-customization.php:204
+msgid "Remember Me"
+msgstr ""
+
+#: hydra-booking-customization.php:205
+msgid "Lost your password?"
+msgstr ""
+
+#: hydra-booking-customization.php:450
+msgid "Loading dashboard..."
+msgstr ""
+
+#: hydra-booking-customization.php:460
+msgid "JavaScript Required"
+msgstr ""
+
+#: hydra-booking-customization.php:461
+msgid "This dashboard requires JavaScript to function properly. Please enable JavaScript in your browser and refresh the page."
+msgstr ""
+
+#: src/Admin/Settings.php:50
+msgid "Hydra Booking Customization"
+msgstr ""
+
+#: src/Admin/Settings.php:51
+msgid "Hydra Booking"
+msgstr ""
+
+#: src/Admin/Settings.php:60
+msgid "General Settings"
+msgstr ""
+
+#: src/Admin/Settings.php:70
+msgid "Dashboard Pages"
+msgstr ""
+
+#: src/Admin/Settings.php:80
+msgid "Advanced Settings"
+msgstr ""
+
+#: src/Admin/Settings.php:90
+msgid "Test Mode"
+msgstr ""
+
+#: src/Admin/Settings.php:100
+msgid "Plugin Information"
+msgstr ""
+
+#: src/Admin/Settings.php:110
+msgid "Jitsi Integration Tools"
+msgstr ""
+
+# Dashboard strings
+msgid "Loading..."
+msgstr ""
+
+msgid "Logout"
+msgstr ""
+
+msgid "Refresh"
+msgstr ""
+
+msgid "Edit Profile"
+msgstr ""
+
+msgid "Profile Settings"
+msgstr ""
+
+msgid "Save"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
+msgid "Confirm"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "View Details"
+msgstr ""
+
+msgid "Not set"
+msgstr ""
+
+# Attendee Dashboard specific
+msgid "Attendee Dashboard"
+msgstr ""
+
+msgid "Manage your bookings and profile"
+msgstr ""
+
+msgid "Total Bookings"
+msgstr ""
+
+msgid "Upcoming"
+msgstr ""
+
+msgid "Completed"
+msgstr ""
+
+msgid "Cancelled"
+msgstr ""
+
+msgid "My Bookings"
+msgstr ""
+
+msgid "Profile"
+msgstr ""
+
+msgid "No bookings"
+msgstr ""
+
+msgid "You don't have any bookings yet."
+msgstr ""
+
+msgid "Date & Time"
+msgstr ""
+
+msgid "Duration"
+msgstr ""
+
+msgid "Start Meeting"
+msgstr ""
+
+msgid "Scheduled"
+msgstr ""
+
+msgid "Available in"
+msgstr ""
+
+msgid "Meeting opened in new tab"
+msgstr ""
+
+msgid "Meeting link not available. Please contact support."
+msgstr ""
+
+msgid "Failed to get meeting link. Please try again."
+msgstr ""
+
+msgid "Test mode: Meeting link would be available here in production."
+msgstr ""
+
+msgid "Are you sure you want to logout?"
+msgstr ""
+
+msgid "Logout failed. Please try again."
+msgstr ""
+
+msgid "Profile updated successfully"
+msgstr ""
+
+# Host Dashboard specific
+msgid "Host Dashboard"
+msgstr ""
+
+msgid "Manage your meetings, bookings, and join links"
+msgstr ""
+
+msgid "Today's Meetings"
+msgstr ""
+
+msgid "Active Links"
+msgstr ""
+
+msgid "Bookings"
+msgstr ""
+
+msgid "Join Links"
+msgstr ""
+
+msgid "Join Links Management"
+msgstr ""
+
+msgid "Generate New Link"
+msgstr ""
+
+msgid "Meeting History"
+msgstr ""
+
+msgid "No bookings found"
+msgstr ""
+
+msgid "No bookings match the current criteria."
+msgstr ""
+
+msgid "Meeting"
+msgstr ""
+
+msgid "min"
+msgstr ""
+
+msgid "Host:"
+msgstr ""
+
+msgid "Booked"
+msgstr ""
+
+msgid "ID:"
+msgstr ""
+
+msgid "Booking reference"
+msgstr ""
+
+msgid "Notes:"
+msgstr ""
+
+msgid "Internal Note:"
+msgstr ""
+
+msgid "Attendee Comment:"
+msgstr ""
+
+msgid "Mark Complete"
+msgstr ""
+
+msgid "Confirm Booking"
+msgstr ""
+
+msgid "Generate Link"
+msgstr ""
+
+msgid "Send Link"
+msgstr ""
+
+# Form fields
+msgid "First Name"
+msgstr ""
+
+msgid "Last Name"
+msgstr ""
+
+msgid "Email"
+msgstr ""
+
+msgid "Phone"
+msgstr ""
+
+msgid "Bio"
+msgstr ""
+
+msgid "Timezone"
+msgstr ""
+
+# Status texts
+msgid "Pending"
+msgstr ""
+
+msgid "Confirmed"
+msgstr ""
+
+msgid "Canceled"
+msgstr ""
+
+# Error messages
+msgid "Failed to load dashboard data"
+msgstr ""
+
+msgid "Failed to load statistics"
+msgstr ""
+
+msgid "Failed to update profile"
+msgstr ""
+
+msgid "Failed to load bookings"
+msgstr ""
+
+# Success messages
+msgid "Booking status updated successfully"
+msgstr ""
+
+msgid "Link copied to clipboard"
+msgstr ""
+
+msgid "Email sent successfully"
+msgstr ""
+
+msgid "Join link generated successfully"
+msgstr ""

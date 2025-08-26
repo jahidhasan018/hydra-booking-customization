@@ -143,61 +143,7 @@ class Settings {
 	 * Add booking management fields.
 	 */
 	private function add_booking_management_fields() {
-		add_settings_field(
-			'hbc_allow_booking_cancellation',
-			__( 'Allow Booking Cancellation', 'hydra-booking-customization' ),
-			array( $this, 'render_checkbox_field' ),
-			'hbc_settings',
-			'hbc_booking_management_section',
-			array(
-				'option_name'   => 'hbc_allow_booking_cancellation',
-				'description'   => __( 'Allow attendees to cancel their bookings from the dashboard.', 'hydra-booking-customization' ),
-				'default_value' => true,
-			)
-		);
 
-		add_settings_field(
-			'hbc_cancellation_hours_limit',
-			__( 'Cancellation Hours Limit', 'hydra-booking-customization' ),
-			array( $this, 'render_number_field' ),
-			'hbc_settings',
-			'hbc_booking_management_section',
-			array(
-				'option_name'   => 'hbc_cancellation_hours_limit',
-				'description'   => __( 'Minimum hours before the meeting that cancellation is allowed.', 'hydra-booking-customization' ),
-				'default_value' => 24,
-				'min'           => 1,
-				'max'           => 168,
-			)
-		);
-
-		add_settings_field(
-			'hbc_allow_booking_rescheduling',
-			__( 'Allow Booking Rescheduling', 'hydra-booking-customization' ),
-			array( $this, 'render_checkbox_field' ),
-			'hbc_settings',
-			'hbc_booking_management_section',
-			array(
-				'option_name'   => 'hbc_allow_booking_rescheduling',
-				'description'   => __( 'Allow attendees to reschedule their bookings from the dashboard.', 'hydra-booking-customization' ),
-				'default_value' => true,
-			)
-		);
-
-		add_settings_field(
-			'hbc_rescheduling_hours_limit',
-			__( 'Rescheduling Hours Limit', 'hydra-booking-customization' ),
-			array( $this, 'render_number_field' ),
-			'hbc_settings',
-			'hbc_booking_management_section',
-			array(
-				'option_name'   => 'hbc_rescheduling_hours_limit',
-				'description'   => __( 'Minimum hours before the meeting that rescheduling is allowed.', 'hydra-booking-customization' ),
-				'default_value' => 48,
-				'min'           => 1,
-				'max'           => 168,
-			)
-		);
 	}
 
 	/**

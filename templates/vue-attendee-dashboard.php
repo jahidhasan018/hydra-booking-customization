@@ -11,14 +11,20 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Enqueue WordPress i18n script
+wp_enqueue_script('wp-i18n');
+
 // Enqueue Vue.js dashboard assets
 wp_enqueue_script(
     'hbc-attendee-dashboard',
     plugin_dir_url(__FILE__) . '../dist/attendee-dashboard.js',
-    [],
+    ['wp-i18n'],
     '1.0.0',
     true
 );
+
+// Set up script translations
+wp_set_script_translations('hbc-attendee-dashboard', 'hydra-booking-customization', plugin_dir_path(__FILE__) . '../languages');
 
 // Add module type attribute to the script
 add_filter('script_loader_tag', function($tag, $handle, $src) {
@@ -68,16 +74,68 @@ $attendee_data = [
     'timezone' => wp_timezone_string(),
     'testMode' => ( HBC_TEST_MODE_STATUS === 'active' ),
     'translations' => [
+        // Dashboard common
         'loading' => __('Loading...', 'hydra-booking-customization'),
-        'error' => __('An error occurred', 'hydra-booking-customization'),
-        'success' => __('Success', 'hydra-booking-customization'),
-        'confirm' => __('Are you sure?', 'hydra-booking-customization'),
-        'cancel' => __('Cancel', 'hydra-booking-customization'),
+        'logout' => __('Logout', 'hydra-booking-customization'),
+        'refresh' => __('Refresh', 'hydra-booking-customization'),
+        'edit_profile' => __('Edit Profile', 'hydra-booking-customization'),
+        'profile_settings' => __('Profile Settings', 'hydra-booking-customization'),
         'save' => __('Save', 'hydra-booking-customization'),
-        'edit' => __('Edit', 'hydra-booking-customization'),
-        'delete' => __('Delete', 'hydra-booking-customization'),
-        'view' => __('View', 'hydra-booking-customization'),
+        'cancel' => __('Cancel', 'hydra-booking-customization'),
         'close' => __('Close', 'hydra-booking-customization'),
+        'confirm' => __('Confirm', 'hydra-booking-customization'),
+        'delete' => __('Delete', 'hydra-booking-customization'),
+        'view_details' => __('View Details', 'hydra-booking-customization'),
+        'not_set' => __('Not set', 'hydra-booking-customization'),
+        
+        // Attendee Dashboard specific
+        'attendee_dashboard' => __('Attendee Dashboard', 'hydra-booking-customization'),
+        'manage_bookings_profile' => __('Manage your bookings and profile', 'hydra-booking-customization'),
+        'total_bookings' => __('Total Bookings', 'hydra-booking-customization'),
+        'upcoming' => __('Upcoming', 'hydra-booking-customization'),
+        'completed' => __('Completed', 'hydra-booking-customization'),
+        'cancelled' => __('Cancelled', 'hydra-booking-customization'),
+        'my_bookings' => __('My Bookings', 'hydra-booking-customization'),
+        'profile' => __('Profile', 'hydra-booking-customization'),
+        'no_bookings' => __('No bookings', 'hydra-booking-customization'),
+        'no_bookings_message' => __("You don't have any bookings yet.", 'hydra-booking-customization'),
+        'date_time' => __('Date & Time', 'hydra-booking-customization'),
+        'duration' => __('Duration', 'hydra-booking-customization'),
+        'start_meeting' => __('Start Meeting', 'hydra-booking-customization'),
+        'scheduled' => __('Scheduled', 'hydra-booking-customization'),
+        'available_in' => __('Available in', 'hydra-booking-customization'),
+        'meeting_opened' => __('Meeting opened in new tab', 'hydra-booking-customization'),
+        'meeting_not_available' => __('Meeting link not available. Please contact support.', 'hydra-booking-customization'),
+        'meeting_failed' => __('Failed to get meeting link. Please try again.', 'hydra-booking-customization'),
+        'test_mode_message' => __('Test mode: Meeting link would be available here in production.', 'hydra-booking-customization'),
+        'logout_confirm' => __('Are you sure you want to logout?', 'hydra-booking-customization'),
+        'logout_failed' => __('Logout failed. Please try again.', 'hydra-booking-customization'),
+        'profile_updated' => __('Profile updated successfully', 'hydra-booking-customization'),
+        
+        // Form fields
+        'first_name' => __('First Name', 'hydra-booking-customization'),
+        'last_name' => __('Last Name', 'hydra-booking-customization'),
+        'email' => __('Email', 'hydra-booking-customization'),
+        'phone' => __('Phone', 'hydra-booking-customization'),
+        'timezone' => __('Timezone', 'hydra-booking-customization'),
+        
+        // Status texts
+        'pending' => __('Pending', 'hydra-booking-customization'),
+        'confirmed' => __('Confirmed', 'hydra-booking-customization'),
+        'completed_status' => __('Completed', 'hydra-booking-customization'),
+        'cancelled_status' => __('Cancelled', 'hydra-booking-customization'),
+        'canceled_status' => __('Canceled', 'hydra-booking-customization'),
+        
+        // Error messages
+        'error_loading_data' => __('Failed to load dashboard data', 'hydra-booking-customization'),
+        'error_loading_stats' => __('Failed to load statistics', 'hydra-booking-customization'),
+        'error_updating_profile' => __('Failed to update profile', 'hydra-booking-customization'),
+        'error_loading_bookings' => __('Failed to load bookings', 'hydra-booking-customization'),
+        
+        // Success messages
+        'booking_updated' => __('Booking status updated successfully', 'hydra-booking-customization'),
+        'link_copied' => __('Link copied to clipboard', 'hydra-booking-customization'),
+        'email_sent' => __('Email sent successfully', 'hydra-booking-customization')
     ]
 ];
 ?>

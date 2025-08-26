@@ -29,8 +29,7 @@ class AttendeeDashboard {
 		// add_shortcode( 'hbc_attendee_dashboard', array( $this, 'render_dashboard_shortcode' ) );
 		add_action( 'wp_ajax_hbc_get_attendee_bookings', array( $this, 'ajax_get_attendee_bookings' ) );
 		add_action( 'wp_ajax_hbc_get_attendee_stats', array( $this, 'ajax_get_attendee_stats' ) );
-		add_action( 'wp_ajax_hbc_cancel_booking', array( $this, 'ajax_cancel_booking' ) );
-		add_action( 'wp_ajax_hbc_reschedule_booking', array( $this, 'ajax_reschedule_booking' ) );
+
 		add_action( 'wp_ajax_hbc_update_profile', array( $this, 'ajax_update_profile' ) );
 		add_action( 'wp_ajax_hbc_change_password', array( $this, 'ajax_change_password' ) );
 
@@ -207,17 +206,7 @@ class AttendeeDashboard {
 								do_action( 'hbc_booking_actions_before', $booking );
 								?>
 								
-								<?php if ( $this->can_cancel_booking( $booking ) ) : ?>
-									<button class="button hbc-cancel-booking" data-booking-id="<?php echo esc_attr( $booking->booking_id ); ?>">
-										<?php _e( 'Cancel', 'hydra-booking-customization' ); ?>
-									</button>
-								<?php endif; ?>
-								
-								<?php if ( $this->can_reschedule_booking( $booking ) ) : ?>
-									<button class="button hbc-reschedule-booking" data-booking-id="<?php echo esc_attr( $booking->booking_id ); ?>">
-										<?php _e( 'Reschedule', 'hydra-booking-customization' ); ?>
-									</button>
-								<?php endif; ?>
+
 								
 								<?php 
 								// Allow other plugins to add custom actions after default actions
@@ -440,39 +429,9 @@ class AttendeeDashboard {
 		return $results;
 	}
 
-	/**
-	 * Check if booking can be cancelled.
-	 *
-	 * @param object $booking Booking object.
-	 * @return bool
-	 */
-	private function can_cancel_booking( $booking ) {
-		// Allow cancellation if booking is at least 24 hours away.
-		$booking_datetime = $booking->meeting_dates . ' ' . $booking->start_time;
-		$booking_time = strtotime( $booking_datetime );
-		$current_time = current_time( 'timestamp' );
-		$hours_until_booking = ( $booking_time - $current_time ) / 3600;
-		
-		$status = $booking->attendee_status ?? $booking->booking_status ?? '';
-		return $hours_until_booking >= 24 && in_array( $status, array( 'confirmed', 'pending' ), true );
-	}
 
-	/**
-	 * Check if booking can be rescheduled.
-	 *
-	 * @param object $booking Booking object.
-	 * @return bool
-	 */
-	private function can_reschedule_booking( $booking ) {
-		// Allow rescheduling if booking is at least 48 hours away.
-		$booking_datetime = $booking->meeting_dates . ' ' . $booking->start_time;
-		$booking_time = strtotime( $booking_datetime );
-		$current_time = current_time( 'timestamp' );
-		$hours_until_booking = ( $booking_time - $current_time ) / 3600;
-		
-		$status = $booking->attendee_status ?? $booking->booking_status ?? '';
-		return $hours_until_booking >= 48 && in_array( $status, array( 'confirmed', 'pending' ), true );
-	}
+
+
 
 	/**
 	 * AJAX handler to get attendee bookings.
@@ -491,129 +450,9 @@ class AttendeeDashboard {
 		wp_send_json_success( $bookings );
 	}
 
-	/**
-	 * AJAX handler to cancel booking.
-	 */
-	public function ajax_cancel_booking() {
-		check_ajax_referer( 'hbc_ajax_nonce', 'nonce' );
-		
-		// Verify attendee access
-		AccessControl::verify_attendee_ajax_access();
-		
-		$booking_id = intval( $_POST['booking_id'] ?? 0 );
-		$user_id = get_current_user_id();
-		
-		if ( ! $booking_id ) {
-			wp_send_json_error( __( 'Invalid booking ID', 'hydra-booking-customization' ) );
-		}
-		
-		// Verify booking belongs to user.
-		global $wpdb;
-		$attendees_table = $wpdb->prefix . 'tfhb_attendees';
-		$bookings_table = $wpdb->prefix . 'tfhb_bookings';
-		
-		$booking = $wpdb->get_row(
-			$wpdb->prepare(
-				"SELECT b.*, a.id as attendee_id 
-				FROM {$bookings_table} b 
-				INNER JOIN {$attendees_table} a ON b.id = a.booking_id 
-				WHERE b.id = %d AND a.user_id = %d",
-				$booking_id,
-				$user_id
-			)
-		);
-		
-		if ( ! $booking ) {
-			wp_send_json_error( __( 'Booking not found', 'hydra-booking-customization' ) );
-		}
-		
-		if ( ! $this->can_cancel_booking( $booking ) ) {
-			wp_send_json_error( __( 'This booking cannot be cancelled', 'hydra-booking-customization' ) );
-		}
-		
-		// Update booking status.
-		$updated = $wpdb->update(
-			$bookings_table,
-			array( 'status' => 'cancelled' ),
-			array( 'id' => $booking_id ),
-			array( '%s' ),
-			array( '%d' )
-		);
-		
-		if ( $updated !== false ) {
-			// Send cancellation notification.
-			do_action( 'hbc_booking_cancelled', $booking_id, $user_id );
-			
-			wp_send_json_success( __( 'Booking cancelled successfully', 'hydra-booking-customization' ) );
-		} else {
-			wp_send_json_error( __( 'Failed to cancel booking', 'hydra-booking-customization' ) );
-		}
-	}
 
-	/**
-	 * AJAX handler to reschedule booking.
-	 */
-	public function ajax_reschedule_booking() {
-		check_ajax_referer( 'hbc_ajax_nonce', 'nonce' );
-		
-		// Verify attendee access
-		AccessControl::verify_attendee_ajax_access();
-		
-		$booking_id = intval( $_POST['booking_id'] ?? 0 );
-		$new_date = sanitize_text_field( $_POST['new_date'] ?? '' );
-		$new_time = sanitize_text_field( $_POST['new_time'] ?? '' );
-		$user_id = get_current_user_id();
-		
-		if ( ! $booking_id || ! $new_date || ! $new_time ) {
-			wp_send_json_error( __( 'Missing required fields', 'hydra-booking-customization' ) );
-		}
-		
-		// Verify booking belongs to user.
-		global $wpdb;
-		$attendees_table = $wpdb->prefix . 'tfhb_attendees';
-		$bookings_table = $wpdb->prefix . 'tfhb_bookings';
-		
-		$booking = $wpdb->get_row(
-			$wpdb->prepare(
-				"SELECT b.*, a.id as attendee_id 
-				FROM {$bookings_table} b 
-				INNER JOIN {$attendees_table} a ON b.id = a.booking_id 
-				WHERE b.id = %d AND a.user_id = %d",
-				$booking_id,
-				$user_id
-			)
-		);
-		
-		if ( ! $booking ) {
-			wp_send_json_error( __( 'Booking not found', 'hydra-booking-customization' ) );
-		}
-		
-		if ( ! $this->can_reschedule_booking( $booking ) ) {
-			wp_send_json_error( __( 'This booking cannot be rescheduled', 'hydra-booking-customization' ) );
-		}
-		
-		// Update booking date and time.
-		$updated = $wpdb->update(
-			$bookings_table,
-			array( 
-				'meeting_dates' => $new_date,
-				'start_time' => $new_time,
-				'status' => 'pending' // Reset to pending for host approval
-			),
-			array( 'id' => $booking_id ),
-			array( '%s', '%s', '%s' ),
-			array( '%d' )
-		);
-		
-		if ( $updated !== false ) {
-			// Send reschedule notification.
-			do_action( 'hbc_booking_rescheduled', $booking_id, $user_id, $new_date, $new_time );
-			
-			wp_send_json_success( __( 'Booking rescheduled successfully. Awaiting host approval.', 'hydra-booking-customization' ) );
-		} else {
-			wp_send_json_error( __( 'Failed to reschedule booking', 'hydra-booking-customization' ) );
-		}
-	}
+
+
 
 	/**
 	 * AJAX handler to update profile.

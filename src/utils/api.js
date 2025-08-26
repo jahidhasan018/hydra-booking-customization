@@ -106,12 +106,6 @@ export const attendeeAPI = {
   changePassword: (data) => 
     api.post('fd-dashboard/change-password', data),
   
-  cancelBooking: (bookingId) => 
-    api.post('booking/change-booking-status', { booking_id: bookingId, status: 'cancelled' }),
-  
-  rescheduleBooking: (bookingId, newDate, newTime) => 
-    api.post(`booking/rebooking`, { booking_id: bookingId, new_date: newDate, new_time: newTime }),
-  
   getStats: () => {
     // Use WordPress AJAX endpoint for attendee stats
     const wpData = getWpData()
