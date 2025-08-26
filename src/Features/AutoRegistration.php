@@ -88,9 +88,9 @@ class AutoRegistration {
 			if ( $existing_user && isset( $attendee_booking->id ) ) {
 				$this->update_attendee_user_id( $attendee_booking->id, $existing_user->ID );
 				
-				// Auto-login existing user and redirect to cart
+				// Auto-login existing user and redirect to checkout
 				$this->auto_login_user( $existing_user->ID );
-				$this->redirect_to_cart();
+				$this->redirect_to_checkout();
 			}
 			return;
 		}
@@ -112,8 +112,8 @@ class AutoRegistration {
 				$this->send_enhanced_welcome_email( $user_id, $attendee_booking );
 			}
 
-			// Redirect to cart page after successful registration
-			$this->redirect_to_cart();
+			// Redirect to checkout page after successful registration
+			$this->redirect_to_checkout();
 
 			// Fire action for other plugins to hook into.
 			do_action( 'hbc_after_auto_registration', $user_id, $attendee_booking );
@@ -161,11 +161,11 @@ class AutoRegistration {
 		// Check if user already exists.
 		$existing_user = get_user_by( 'email', $attendee_email );
 		if ( $existing_user ) {
-			error_log( 'HBC AutoRegistration: User already exists, auto-logging in and redirecting to cart' );
+			error_log( 'HBC AutoRegistration: User already exists, auto-logging in and redirecting to checkout' );
 			
-			// Auto-login existing user and redirect to cart
+			// Auto-login existing user and redirect to checkout
 			$this->auto_login_user( $existing_user->ID );
-			$this->redirect_to_cart();
+			$this->redirect_to_checkout();
 			return;
 		}
 
@@ -190,8 +190,8 @@ class AutoRegistration {
 				$this->send_enhanced_welcome_email( $user_id, $mock_attendee_booking );
 			}
 			
-			// Redirect to cart page after successful registration
-			$this->redirect_to_cart();
+			// Redirect to checkout page after successful registration
+			$this->redirect_to_checkout();
 		}
 	}
 
@@ -459,19 +459,19 @@ The %2$s Team', 'hydra-booking-customization' ),
 
 		$site_name = get_bloginfo( 'name' );
 		$dashboard_url = home_url( '/attendee-dashboard/' );
-		$cart_url = function_exists( 'wc_get_cart_url' ) ? wc_get_cart_url() : home_url();
+		$checkout_url = function_exists( 'wc_get_checkout_url' ) ? wc_get_checkout_url() : home_url();
 		
 		$subject = sprintf( __( 'Welcome to %s - Your Account Details', 'hydra-booking-customization' ), $site_name );
 		
 		$message = sprintf(
-			__( "Hello %s,\n\nWelcome to %s! Your account has been created successfully and you have been automatically logged in.\n\n=== Your Login Details ===\nUsername: %s\nPassword: %s\n\n=== Quick Links ===\n• Login Page: %s\n• Your Dashboard: %s\n• Shopping Cart: %s\n\n=== What's Next? ===\nYou can now:\n• View and manage your bookings\n• Update your profile information\n• Complete your current booking in the cart\n\nFor security reasons, we recommend changing your password after your first login.\n\nIf you have any questions, please don't hesitate to contact us.\n\nThank you for choosing %s!\n\nBest regards,\nThe %s Team", 'hydra-booking-customization' ),
+			__( "Hello %s,\n\nWelcome to %s! Your account has been created successfully and you have been automatically logged in.\n\n=== Your Login Details ===\nUsername: %s\nPassword: %s\n\n=== Quick Links ===\n• Login Page: %s\n• Your Dashboard: %s\n• Checkout Page: %s\n\n=== What's Next? ===\nYou can now:\n• View and manage your bookings\n• Update your profile information\n• Complete your current booking at checkout\n\nFor security reasons, we recommend changing your password after your first login.\n\nIf you have any questions, please don't hesitate to contact us.\n\nThank you for choosing %s!\n\nBest regards,\nThe %s Team", 'hydra-booking-customization' ),
 			$user->display_name,
 			$site_name,
 			$user->user_login,
 			$password,
 			wp_login_url(),
 			$dashboard_url,
-			$cart_url,
+			$checkout_url,
 			$site_name,
 			$site_name
 		);
@@ -538,15 +538,15 @@ The %2$s Team', 'hydra-booking-customization' ),
 	}
 
 	/**
-	 * Redirect user to cart page after successful registration/login.
+	 * Redirect user to checkout page after successful registration/login.
 	 */
-	public function redirect_to_cart() {
+	public function redirect_to_checkout() {
 		// Check if WooCommerce is active
-		if ( ! function_exists( 'wc_get_cart_url' ) ) {
+		if ( ! function_exists( 'wc_get_checkout_url' ) ) {
 			error_log( 'HBC AutoRegistration: WooCommerce not active, redirecting to home page' );
 			$redirect_url = home_url();
 		} else {
-			$redirect_url = wc_get_cart_url();
+			$redirect_url = wc_get_checkout_url();
 		}
 		
 		// Allow other plugins to modify the redirect URL
@@ -556,10 +556,10 @@ The %2$s Team', 'hydra-booking-customization' ),
 		if ( wp_doing_ajax() || did_action( 'wp_ajax_nopriv_tfhb_meeting_form_submit' ) || did_action( 'wp_ajax_tfhb_meeting_form_submit' ) ) {
 			// For AJAX requests, we'll set a transient to handle redirect on next page load
 			set_transient( 'hbc_redirect_after_registration_' . get_current_user_id(), $redirect_url, 300 ); // 5 minutes
-			error_log( 'HBC AutoRegistration: Set redirect transient for cart: ' . $redirect_url );
+			error_log( 'HBC AutoRegistration: Set redirect transient for checkout: ' . $redirect_url );
 		} else {
 			// Direct redirect for non-AJAX contexts
-			error_log( 'HBC AutoRegistration: Redirecting to cart: ' . $redirect_url );
+			error_log( 'HBC AutoRegistration: Redirecting to checkout: ' . $redirect_url );
 			wp_safe_redirect( $redirect_url );
 			exit;
 		}
