@@ -1,0 +1,28 @@
+{
+  "_style-DDuYs_LQ.js": {
+    "file": "style-DDuYs_LQ.js",
+    "name": "style"
+  },
+  "src/attendee-dashboard.js": {
+    "file": "attendee-dashboard.js",
+    "name": "attendee-dashboard",
+    "src": "src/attendee-dashboard.js",
+    "isEntry": true,
+    "imports": [
+      "_style-DDuYs_LQ.js"
+    ]
+  },
+  "src/host-dashboard.js": {
+    "file": "host-dashboard.js",
+    "name": "host-dashboard",
+    "src": "src/host-dashboard.js",
+    "isEntry": true,
+    "imports": [
+      "_style-DDuYs_LQ.js"
+    ]
+  },
+  "style.css": {
+    "file": "style.css",
+    "src": "style.css"
+  }
+}

@@ -1,0 +1,24 @@
+{
+    "name": "hydra-booking/customization",
+    "description": "Custom plugin to add automatic attendee registration and dedicated attendee dashboard for Hydra Booking plugin",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Your Name",
+            "email": "your.email@example.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "HydraBookingCustomization\\": "src/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    }
+}

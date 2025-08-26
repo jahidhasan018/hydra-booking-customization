@@ -1,0 +1,811 @@
+/**
+ * Jitsi Integration Styles for Attendee Dashboard
+ * 
+ * Provides secure, accessible, and modern styling for the Jitsi meeting integration.
+ * Includes responsive design, accessibility features, and performance optimizations.
+ * 
+ * @package HydraBookingCustomization
+ * @since 1.0.0
+ */
+
+/* ==========================================================================
+   CSS Custom Properties (Variables)
+   ========================================================================== */
+:root {
+    /* Color Palette */
+    --hbc-primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --hbc-primary-gradient-hover: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    --hbc-success-gradient: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    --hbc-success-gradient-hover: linear-gradient(135deg, #218838 0%, #1ba085 100%);
+    --hbc-warning-gradient: linear-gradient(135deg, #fd7e14 0%, #e83e8c 100%);
+    --hbc-warning-gradient-hover: linear-gradient(135deg, #e8650e 0%, #d91a72 100%);
+    --hbc-secondary-gradient: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    --hbc-host-gradient: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    
+    /* Spacing */
+    --hbc-spacing-xs: 4px;
+    --hbc-spacing-sm: 8px;
+    --hbc-spacing-md: 16px;
+    --hbc-spacing-lg: 24px;
+    --hbc-spacing-xl: 32px;
+    
+    /* Border Radius */
+    --hbc-border-radius-sm: 6px;
+    --hbc-border-radius-md: 12px;
+    --hbc-border-radius-lg: 16px;
+    
+    /* Shadows */
+    --hbc-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --hbc-shadow-md: 0 4px 8px rgba(0, 0, 0, 0.15);
+    --hbc-shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.3);
+    
+    /* Transitions */
+    --hbc-transition-fast: 0.2s ease;
+    --hbc-transition-normal: 0.3s ease;
+    --hbc-transition-slow: 0.5s ease;
+    
+    /* Z-index */
+    --hbc-z-modal: 10000;
+    --hbc-z-tooltip: 1000;
+}
+
+/* ==========================================================================
+   Meeting Button Styles
+   ========================================================================== */
+.hbc-join-meeting-btn,
+.hbc-secure-meeting-btn {
+    /* Layout */
+    display: inline-flex;
+    align-items: center;
+    gap: var(--hbc-spacing-sm);
+    padding: var(--hbc-spacing-sm) var(--hbc-spacing-md);
+    
+    /* Appearance */
+    background: var(--hbc-primary-gradient);
+    color: white;
+    text-decoration: none;
+    border-radius: var(--hbc-border-radius-sm);
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    
+    /* Effects */
+    transition: all var(--hbc-transition-normal);
+    box-shadow: var(--hbc-shadow-sm);
+    position: relative;
+    overflow: hidden;
+    
+    /* Accessibility */
+    outline: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    min-width: 120px;
+    justify-content: center;
+}
+
+.hbc-join-meeting-btn:hover,
+.hbc-secure-meeting-btn:hover {
+    background: var(--hbc-primary-gradient-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--hbc-shadow-md);
+    color: white;
+    text-decoration: none;
+}
+
+.hbc-join-meeting-btn:active,
+.hbc-secure-meeting-btn:active {
+    transform: translateY(0);
+    box-shadow: var(--hbc-shadow-sm);
+}
+
+.hbc-join-meeting-btn:focus,
+.hbc-secure-meeting-btn:focus {
+    outline: 2px solid #4285f4;
+    outline-offset: 2px;
+}
+
+.hbc-join-meeting-btn:disabled,
+.hbc-secure-meeting-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* ==========================================================================
+   Button States
+   ========================================================================== */
+.hbc-join-meeting-btn.hbc-btn-ready,
+.hbc-secure-meeting-btn.hbc-btn-ready {
+    background: var(--hbc-success-gradient);
+    animation: hbc-pulse-success 2s infinite;
+}
+
+.hbc-join-meeting-btn.hbc-btn-ready:hover,
+.hbc-secure-meeting-btn.hbc-btn-ready:hover {
+    background: var(--hbc-success-gradient-hover);
+}
+
+.hbc-join-meeting-btn.hbc-btn-active,
+.hbc-secure-meeting-btn.hbc-btn-active {
+    background: var(--hbc-warning-gradient);
+    animation: hbc-pulse-warning 1.5s infinite;
+}
+
+.hbc-join-meeting-btn.hbc-btn-active:hover,
+.hbc-secure-meeting-btn.hbc-btn-active:hover {
+    background: var(--hbc-warning-gradient-hover);
+}
+
+.hbc-join-meeting-btn.hbc-btn-joined,
+.hbc-secure-meeting-btn.hbc-btn-joined {
+    background: var(--hbc-secondary-gradient);
+    cursor: default;
+    animation: none;
+}
+
+.hbc-join-meeting-btn.hbc-btn-joined:hover,
+.hbc-secure-meeting-btn.hbc-btn-joined:hover {
+    background: var(--hbc-secondary-gradient);
+    transform: none;
+}
+
+/* ==========================================================================
+   Badges and Status Indicators
+   ========================================================================== */
+.host-badge {
+    background: var(--hbc-host-gradient);
+    color: #212529;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: 4px;
+    text-shadow: none;
+}
+
+.hbc-meeting-scheduled {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #666;
+    font-size: 14px;
+}
+
+.hbc-meeting-ended {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #46b450;
+    font-size: 14px;
+}
+
+.hbc-no-meeting {
+    color: #999;
+    font-style: italic;
+    font-size: 14px;
+}
+
+.hbc-meeting-status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--hbc-spacing-xs);
+    font-size: 12px;
+    padding: var(--hbc-spacing-xs) var(--hbc-spacing-sm);
+    border-radius: var(--hbc-border-radius-md);
+    font-weight: 500;
+}
+
+.hbc-meeting-status.waiting {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.hbc-meeting-status.ready {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.hbc-meeting-status.active {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.hbc-meeting-status.ended {
+    background: #fafafa;
+    color: #616161;
+}
+
+/* ==========================================================================
+   Animations
+   ========================================================================== */
+@keyframes hbc-pulse-success {
+    0% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+    }
+}
+
+@keyframes hbc-pulse-warning {
+    0% {
+        box-shadow: 0 0 0 0 rgba(253, 126, 20, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(253, 126, 20, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(253, 126, 20, 0);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    }
+}
+
+@keyframes hbc-modal-slide-in {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* ==========================================================================
+   Modal Styles
+   ========================================================================== */
+.hbc-modal {
+    display: none;
+    position: fixed;
+    z-index: var(--hbc-z-modal);
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    animation: hbc-modal-slide-in var(--hbc-transition-normal) ease-out;
+}
+
+.hbc-modal-content {
+    background-color: #fff;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: var(--hbc-border-radius-md);
+    width: 90%;
+    max-width: 600px;
+    box-shadow: var(--hbc-shadow-lg);
+    position: relative;
+    overflow: hidden;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalSlideIn 0.3s ease;
+}
+
+.hbc-jitsi-modal-content {
+    max-width: 1200px;
+    width: 95%;
+    height: 80vh;
+    margin: 2% auto;
+}
+
+.hbc-modal-header {
+    background: var(--hbc-primary-gradient);
+    color: white;
+    padding: var(--hbc-spacing-lg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    border-bottom: 1px solid #eee;
+    border-radius: 8px 8px 0 0;
+}
+
+.hbc-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    text-shadow: none;
+    color: white;
+}
+
+.hbc-modal-close {
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+    opacity: 0.8;
+    transition: opacity var(--hbc-transition-fast);
+    background: none;
+    border: none;
+    padding: var(--hbc-spacing-xs);
+    border-radius: var(--hbc-border-radius-sm);
+}
+
+.hbc-modal-close:hover,
+.hbc-modal-close:focus {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+    outline: none;
+    color: white;
+}
+
+.hbc-modal-body {
+    padding: var(--hbc-spacing-xl);
+    text-align: center;
+}
+
+.hbc-jitsi-modal .hbc-modal-body {
+    padding: 0;
+    height: calc(80vh - 60px);
+    text-align: left;
+}
+
+/* ==========================================================================
+   Meeting Link Components
+   ========================================================================== */
+.hbc-meeting-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px var(--hbc-spacing-lg);
+    background: var(--hbc-primary-gradient);
+    color: white;
+    text-decoration: none;
+    border-radius: var(--hbc-border-radius-sm);
+    font-size: 16px;
+    font-weight: 500;
+    transition: all var(--hbc-transition-normal);
+    margin: 10px 0;
+    border: none;
+    cursor: pointer;
+    outline: none;
+}
+
+.hbc-meeting-link-btn:hover {
+    background: var(--hbc-primary-gradient-hover);
+    color: white;
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: var(--hbc-shadow-md);
+}
+
+.hbc-meeting-link-btn:focus {
+    outline: 2px solid #4285f4;
+    outline-offset: 2px;
+}
+
+.hbc-meeting-url {
+    margin-top: 15px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: var(--hbc-border-radius-sm);
+    border-left: 4px solid #667eea;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.hbc-meeting-url a {
+    color: #667eea;
+    word-break: break-all;
+    text-decoration: none;
+}
+
+.hbc-meeting-url a:hover {
+    text-decoration: underline;
+}
+
+/* ==========================================================================
+   Jitsi Container Styles
+   ========================================================================== */
+.hbc-jitsi-container {
+    width: 100%;
+    height: 100%;
+    border-radius: 0 0 var(--hbc-border-radius-md) var(--hbc-border-radius-md);
+    overflow: hidden;
+    background: #f5f5f5;
+}
+
+.hbc-jitsi-fallback,
+.hbc-jitsi-error {
+    text-align: center;
+    padding: 40px var(--hbc-spacing-lg);
+    background: #f8f9fa;
+    border-radius: var(--hbc-border-radius-sm);
+    margin: var(--hbc-spacing-md);
+}
+
+.hbc-jitsi-fallback p,
+.hbc-jitsi-error p {
+    margin-bottom: var(--hbc-spacing-lg);
+    color: #666;
+    line-height: 1.5;
+}
+
+.hbc-jitsi-error {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+}
+
+/* ==========================================================================
+   Responsive Design
+   ========================================================================== */
+@media (max-width: 768px) {
+    .hbc-modal-content {
+        width: 95%;
+        margin: 10% auto;
+    }
+    
+    .hbc-jitsi-modal-content {
+        width: 98%;
+        height: 90vh;
+        margin: 1% auto;
+    }
+    
+    .hbc-join-meeting-btn,
+    .hbc-secure-meeting-btn {
+        padding: var(--hbc-spacing-xs) var(--hbc-spacing-md);
+        font-size: 12px;
+        min-width: 100px;
+    }
+    
+    .hbc-modal-header {
+        padding: 15px;
+    }
+    
+    .hbc-modal-body {
+        padding: 15px;
+    }
+    
+    .hbc-meeting-link-btn {
+        padding: 10px var(--hbc-spacing-lg);
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .hbc-join-meeting-btn,
+    .hbc-secure-meeting-btn {
+        padding: var(--hbc-spacing-xs) var(--hbc-spacing-sm);
+        font-size: 11px;
+        min-width: 80px;
+        gap: var(--hbc-spacing-xs);
+    }
+    
+    .hbc-join-meeting-btn i,
+    .hbc-secure-meeting-btn i {
+        font-size: 10px;
+    }
+    
+    .hbc-modal-header h3 {
+        font-size: 16px;
+    }
+    
+    .hbc-modal-body {
+        padding: var(--hbc-spacing-md);
+    }
+}
+
+/* ==========================================================================
+   Dashboard Table Enhancements
+   ========================================================================== */
+.hbc-attendee-dashboard table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: var(--hbc-spacing-md) 0;
+}
+
+.hbc-attendee-dashboard th,
+.hbc-attendee-dashboard td {
+    padding: var(--hbc-spacing-md) var(--hbc-spacing-sm);
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+
+.hbc-attendee-dashboard th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #333;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.hbc-attendee-dashboard tr:hover {
+    background: #f8f9fa;
+}
+
+/* ==========================================================================
+   Loading States and Animations
+   ========================================================================== */
+.hbc-join-meeting-btn .fa-spinner,
+.hbc-secure-meeting-btn .fa-spinner {
+    animation: hbc-spin 1s linear infinite;
+}
+
+@keyframes hbc-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.hbc-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+/* ==========================================================================
+   Messages and Notifications
+   ========================================================================== */
+.hbc-message {
+    padding: var(--hbc-spacing-md) 15px;
+    border-radius: var(--hbc-border-radius-sm);
+    margin: 10px 0;
+    border-left: 4px solid;
+    font-weight: 500;
+}
+
+.hbc-message.success {
+    background: #d4edda;
+    color: #155724;
+    border-color: #28a745;
+}
+
+.hbc-message.error {
+    background: #f8d7da;
+    color: #721c24;
+    border-color: #dc3545;
+}
+
+.hbc-message.warning {
+    background: #fff3cd;
+    color: #856404;
+    border-color: #ffc107;
+}
+
+.hbc-message.info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border-color: #17a2b8;
+}
+
+/* ==========================================================================
+   Accessibility and High Contrast Support
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+@media (prefers-contrast: high) {
+    .hbc-join-meeting-btn,
+    .hbc-secure-meeting-btn {
+        border: 2px solid currentColor;
+        background: ButtonFace;
+        color: ButtonText;
+    }
+    
+    .hbc-modal {
+        background-color: rgba(0, 0, 0, 0.8);
+    }
+    
+    .hbc-modal-content {
+        border: 2px solid;
+    }
+}
+
+/* Screen Reader Only Content */
+.hbc-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Focus Management */
+.hbc-focus-trap {
+    position: relative;
+}
+
+.hbc-focus-trap:focus {
+    outline: none;
+}
+
+/* Print Styles */
+@media print {
+    .hbc-modal,
+    .hbc-join-meeting-btn,
+    .hbc-secure-meeting-btn {
+        display: none !important;
+    }
+}
+
+/* ==========================================================================
+   Dark Mode Support
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+    .hbc-modal-content {
+        background-color: #2d3748;
+        color: #e2e8f0;
+    }
+    
+    .hbc-modal-header {
+        background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+    }
+    
+    .hbc-meeting-url {
+        background: #4a5568;
+        color: #e2e8f0;
+        border-left-color: #667eea;
+    }
+    
+    .hbc-jitsi-fallback,
+    .hbc-jitsi-error {
+        background: #4a5568;
+        color: #e2e8f0;
+    }
+    
+    .hbc-attendee-dashboard th {
+        background: #4a5568;
+        color: #e2e8f0;
+    }
+    
+    .hbc-attendee-dashboard tr:hover {
+        background: #4a5568;
+    }
+}
+
+/* ==========================================================================
+   Testing Mode Badge Styles
+   ========================================================================== */
+.hbc-testing-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    margin-left: 8px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(255, 107, 107, 0.3);
+    animation: hbc-testing-pulse 2s infinite;
+    position: relative;
+    overflow: hidden;
+}
+
+.hbc-testing-badge::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: hbc-testing-shine 3s infinite;
+}
+
+.hbc-testing-badge .hbc-testing-icon {
+    width: 12px;
+    height: 12px;
+    fill: currentColor;
+}
+
+/* Testing mode pulse animation */
+@keyframes hbc-testing-pulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 2px 4px rgba(255, 107, 107, 0.3);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 4px 8px rgba(255, 107, 107, 0.5);
+    }
+}
+
+/* Testing mode shine animation */
+@keyframes hbc-testing-shine {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+/* Testing mode button modifications */
+.hbc-join-meeting-btn.hbc-testing-mode,
+.hbc-secure-meeting-btn.hbc-testing-mode {
+    position: relative;
+    border: 2px solid #ff6b6b;
+    box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.2);
+}
+
+.hbc-join-meeting-btn.hbc-testing-mode::after,
+.hbc-secure-meeting-btn.hbc-testing-mode::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border: 2px solid #ff6b6b;
+    border-radius: inherit;
+    animation: hbc-testing-border-pulse 2s infinite;
+    pointer-events: none;
+}
+
+@keyframes hbc-testing-border-pulse {
+    0%, 100% {
+        opacity: 0.5;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.02);
+    }
+}
+
+/* Dark mode support for testing badges */
+@media (prefers-color-scheme: dark) {
+    .hbc-testing-badge {
+        background: linear-gradient(135deg, #ff5252 0%, #d32f2f 100%);
+        box-shadow: 0 2px 4px rgba(255, 82, 82, 0.4);
+    }
+    
+    .hbc-join-meeting-btn.hbc-testing-mode,
+    .hbc-secure-meeting-btn.hbc-testing-mode {
+        border-color: #ff5252;
+        box-shadow: 0 0 0 2px rgba(255, 82, 82, 0.3);
+    }
+    
+    .hbc-join-meeting-btn.hbc-testing-mode::after,
+    .hbc-secure-meeting-btn.hbc-testing-mode::after {
+        border-color: #ff5252;
+    }
+}
