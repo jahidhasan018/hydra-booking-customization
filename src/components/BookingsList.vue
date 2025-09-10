@@ -43,19 +43,19 @@
             <!-- Attendee Information -->
             <div>
               <p class="text-sm font-medium text-gray-700">{{ __('attendee') }}</p>
-              <p class="text-sm text-gray-900 truncate">{{ getAttendeeName(booking.attendees) || 'N/A' }}</p>
+              <p class="text-sm text-gray-900 truncate">{{ getAttendeeName(booking.attendees) || __('not_available') }}</p>
             </div>
 
             <!-- Email -->
             <div>
               <p class="text-sm font-medium text-gray-700">{{ __('email') }}</p>
-              <p class="text-sm text-gray-600 truncate">{{ getAttendeeEmail(booking.attendees) || 'N/A' }}</p>
+              <p class="text-sm text-gray-600 truncate">{{ getAttendeeEmail(booking.attendees) || __('not_available') }}</p>
             </div>
 
             <!-- Duration -->
             <div>
               <p class="text-sm font-medium text-gray-700">{{ __('duration') }}</p>
-              <p class="text-sm text-gray-600">{{ booking.duration ? booking.duration + ' ' + __('min') : 'N/A' }}</p>
+              <p class="text-sm text-gray-600">{{ booking.duration ? booking.duration + ' ' + __('min') : __('not_available') }}</p>
             </div>
 
             <!-- Booking Date -->

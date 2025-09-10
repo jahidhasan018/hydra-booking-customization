@@ -470,8 +470,27 @@ class AttendeeDashboard {
             'first_name'  => sanitize_text_field( $_POST['first_name'] ?? '' ),
             'last_name'   => sanitize_text_field( $_POST['last_name'] ?? '' ),
             'user_email'  => sanitize_email( $_POST['email'] ?? $_POST['user_email'] ?? '' ),
-            'description' => sanitize_textarea_field( $_POST['description'] ?? '' ),
+            'description' => sanitize_textarea_field( $_POST['bio'] ?? $_POST['description'] ?? '' ),
         );
+        
+        // Handle phone number as user meta
+        $phone = sanitize_text_field( $_POST['phone'] ?? '' );
+        update_user_meta( $user_id, 'billing_phone', $phone );
+        
+        // Handle password change if provided
+        if ( !empty( $_POST['new_password'] ) && !empty( $_POST['current_password'] ) ) {
+            $current_password = sanitize_text_field( $_POST['current_password'] );
+            $new_password = sanitize_text_field( $_POST['new_password'] );
+            
+            // Verify current password
+            $user = get_user_by( 'id', $user_id );
+            if ( wp_check_password( $current_password, $user->user_pass, $user_id ) ) {
+                wp_set_password( $new_password, $user_id );
+            } else {
+                wp_send_json_error( __( 'Current password is incorrect', 'hydra-booking-customization' ) );
+                return;
+            }
+        }
 		
 		$updated = wp_update_user( $user_data );
 		

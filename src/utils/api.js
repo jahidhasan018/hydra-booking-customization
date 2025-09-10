@@ -68,11 +68,13 @@ export const attendeeAPI = {
     // Use current user data from WordPress
     const wpData = getWpData()
     return Promise.resolve({
-      id: wpData.currentUser?.ID || 0,
+      id: wpData.currentUser?.id || 0,
       name: wpData.currentUser?.display_name || '',
-      email: wpData.currentUser?.user_email || '',
+      email: wpData.currentUser?.email || wpData.currentUser?.user_email || '',
       first_name: wpData.currentUser?.first_name || '',
       last_name: wpData.currentUser?.last_name || '',
+      phone: wpData.currentUser?.phone || '',
+      bio: wpData.currentUser?.bio || '',
       role: wpData.currentUser?.roles?.[0] || 'subscriber'
     })
   },

@@ -2,7 +2,7 @@
   <div class="modal-overlay" @click="$emit('close')">
     <div class="modal-content" @click.stop>
       <div class="modal-header">
-        <h3 class="modal-title">Generate Join Link</h3>
+        <h3 class="modal-title">{{ __('generate_join_link') }}</h3>
         <button @click="$emit('close')" class="modal-close">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -20,7 +20,7 @@
           <div class="space-y-6">
             <!-- Meeting Selection -->
             <div>
-              <label for="meeting_id" class="form-label">Select Meeting *</label>
+              <label for="meeting_id" class="form-label">{{ __('select_meeting') }} *</label>
               <select
                 id="meeting_id"
                 v-model="form.meeting_id"
@@ -29,7 +29,7 @@
                 required
                 @change="onMeetingChange"
               >
-                <option value="">Choose a meeting</option>
+                <option value="">{{ __('choose_meeting') }}</option>
                 <option
                   v-for="meeting in availableMeetings"
                   :key="meeting.id"
@@ -43,7 +43,7 @@
 
             <!-- Link Type -->
             <div>
-              <label class="form-label">Link Type *</label>
+              <label class="form-label">{{ __('link_type') }} *</label>
               <div class="space-y-2">
                 <label class="flex items-center">
                   <input
@@ -53,8 +53,8 @@
                     class="form-radio"
                   />
                   <span class="ml-2">
-                    <span class="font-medium">One-time Link</span>
-                    <span class="block text-sm text-gray-500">Can only be used once</span>
+                    <span class="font-medium">{{ __('one_time_link') }}</span>
+                    <span class="block text-sm text-gray-500">{{ __('can_only_used_once') }}</span>
                   </span>
                 </label>
 
@@ -66,8 +66,8 @@
                     class="form-radio"
                   />
                   <span class="ml-2">
-                    <span class="font-medium">Reusable Link</span>
-                    <span class="block text-sm text-gray-500">Can be used multiple times</span>
+                    <span class="font-medium">{{ __('reusable_link') }}</span>
+                    <span class="block text-sm text-gray-500">{{ __('can_used_multiple_times') }}</span>
                   </span>
                 </label>
 
@@ -79,8 +79,8 @@
                     class="form-radio"
                   />
                   <span class="ml-2">
-                    <span class="font-medium">Limited Use Link</span>
-                    <span class="block text-sm text-gray-500">Can be used a specific number of times</span>
+                    <span class="font-medium">{{ __('limited_use_link') }}</span>
+                    <span class="block text-sm text-gray-500">{{ __('can_used_specific_times') }}</span>
                   </span>
                 </label>
               </div>
@@ -89,7 +89,7 @@
 
             <!-- Max Uses (for limited type) -->
             <div v-if="form.link_type === 'limited'">
-              <label for="max_uses" class="form-label">Maximum Uses *</label>
+              <label for="max_uses" class="form-label">{{ __('maximum_uses') }} *</label>
               <input
                 id="max_uses"
                 v-model.number="form.max_uses"
@@ -105,7 +105,7 @@
 
             <!-- Custom URL -->
             <div>
-              <label for="custom_url" class="form-label">Custom URL (Optional)</label>
+              <label for="custom_url" class="form-label">{{ __('custom_url_optional') }}</label>
               <div class="flex">
                 <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
                   {{ baseUrl }}/join/
@@ -121,14 +121,14 @@
                 />
               </div>
               <p class="text-sm text-gray-500 mt-1">
-                Leave blank to generate a random URL
+                {{ __('leave_blank_random_url') }}
               </p>
               <p v-if="errors.custom_url" class="form-error">{{ errors.custom_url }}</p>
             </div>
 
             <!-- Expiration -->
             <div>
-              <label class="form-label">Link Expiration</label>
+              <label class="form-label">{{ __('link_expiration') }}</label>
               <div class="space-y-2">
                 <label class="flex items-center">
                   <input
@@ -137,7 +137,7 @@
                     value="never"
                     class="form-radio"
                   />
-                  <span class="ml-2">Never expires</span>
+                  <span class="ml-2">{{ __('never_expires') }}</span>
                 </label>
 
                 <label class="flex items-center">
@@ -147,7 +147,7 @@
                     value="after_meeting"
                     class="form-radio"
                   />
-                  <span class="ml-2">Expires after meeting ends</span>
+                  <span class="ml-2">{{ __('expires_after_meeting') }}</span>
                 </label>
 
                 <label class="flex items-center">
@@ -157,7 +157,7 @@
                     value="custom"
                     class="form-radio"
                   />
-                  <span class="ml-2">Custom expiration date</span>
+                  <span class="ml-2">{{ __('custom_expiration_date') }}</span>
                 </label>
               </div>
             </div>
@@ -165,7 +165,7 @@
             <!-- Custom Expiration Date -->
             <div v-if="form.expiration_type === 'custom'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label for="expiration_date" class="form-label">Expiration Date *</label>
+                <label for="expiration_date" class="form-label">{{ __('expiration_date') }} *</label>
                 <input
                   id="expiration_date"
                   v-model="form.expiration_date"
@@ -179,7 +179,7 @@
               </div>
 
               <div>
-                <label for="expiration_time" class="form-label">Expiration Time *</label>
+                <label for="expiration_time" class="form-label">{{ __('expiration_time') }} *</label>
                 <input
                   id="expiration_time"
                   v-model="form.expiration_time"
@@ -194,21 +194,21 @@
 
             <!-- Description -->
             <div>
-              <label for="description" class="form-label">Description (Optional)</label>
+              <label for="description" class="form-label">{{ __('description_optional') }}</label>
               <textarea
                 id="description"
                 v-model="form.description"
                 rows="3"
                 class="form-input"
                 :class="{ 'border-red-500': errors.description }"
-                placeholder="Add a description for this join link..."
+                :placeholder="__('add_description_join_link')"
               ></textarea>
               <p v-if="errors.description" class="form-error">{{ errors.description }}</p>
             </div>
 
             <!-- Security Options -->
             <div class="border-t pt-4">
-              <h4 class="text-lg font-medium text-gray-900 mb-3">Security Options</h4>
+              <h4 class="text-lg font-medium text-gray-900 mb-3">{{ __('security_options') }}</h4>
               <div class="space-y-2">
                 <label class="flex items-center">
                   <input
@@ -216,7 +216,7 @@
                     type="checkbox"
                     class="form-checkbox"
                   />
-                  <span class="ml-2 text-sm text-gray-700">Require password to join</span>
+                  <span class="ml-2 text-sm text-gray-700">{{ __('require_password_join') }}</span>
                 </label>
 
                 <label class="flex items-center">
@@ -225,7 +225,7 @@
                     type="checkbox"
                     class="form-checkbox"
                   />
-                  <span class="ml-2 text-sm text-gray-700">Enable waiting room</span>
+                  <span class="ml-2 text-sm text-gray-700">{{ __('enable_waiting_room') }}</span>
                 </label>
 
                 <label class="flex items-center">
@@ -234,14 +234,14 @@
                     type="checkbox"
                     class="form-checkbox"
                   />
-                  <span class="ml-2 text-sm text-gray-700">Require host approval to join</span>
+                  <span class="ml-2 text-sm text-gray-700">{{ __('require_host_approval') }}</span>
                 </label>
               </div>
             </div>
 
             <!-- Password Field -->
             <div v-if="form.require_password">
-              <label for="password" class="form-label">Meeting Password *</label>
+              <label for="password" class="form-label">{{ __('meeting_password') }} *</label>
               <input
                 id="password"
                 v-model="form.password"
@@ -257,11 +257,11 @@
 
         <div class="modal-footer">
           <button type="button" @click="$emit('close')" class="btn-secondary">
-            Cancel
+            {{ __('cancel') }}
           </button>
           <button type="submit" class="btn-primary" :disabled="isSubmitting">
             <div v-if="isSubmitting" class="loading-spinner-sm mr-2"></div>
-            {{ isSubmitting ? 'Generating...' : 'Generate Link' }}
+            {{ isSubmitting ? __('generating') : __('generate_link') }}
           </button>
         </div>
       </form>
@@ -273,6 +273,7 @@
 import { ref, reactive, computed, watch, onMounted, inject } from 'vue'
 import { formatDateTime } from '../../utils/helpers.js'
 import { hostAPI } from '../../utils/api.js'
+import { __ } from '../../utils/i18n.js'
 
 export default {
   name: 'JoinLinkModal',
@@ -336,7 +337,7 @@ export default {
         const data = await hostAPI.getBookings('upcoming')
         availableMeetings.value = data.bookings || []
       } catch (error) {
-        showAlert('error', 'Failed to load available meetings')
+        showAlert('error', __('failed_load_meetings'))
       }
     }
 
@@ -362,35 +363,35 @@ export default {
 
       // Required fields
       if (!form.meeting_id) {
-        errors.meeting_id = 'Please select a meeting'
+        errors.meeting_id = __('please_select_meeting')
       }
 
       if (!form.link_type) {
-        errors.link_type = 'Please select a link type'
+        errors.link_type = __('please_select_link_type')
       }
 
       if (form.link_type === 'limited') {
         if (!form.max_uses || form.max_uses < 1) {
-          errors.max_uses = 'Maximum uses must be at least 1'
+          errors.max_uses = __('max_uses_at_least_one')
         }
       }
 
       // Custom URL validation
       if (form.custom_url) {
         if (form.custom_url.length < 3) {
-          errors.custom_url = 'Custom URL must be at least 3 characters'
+          errors.custom_url = __('custom_url_min_length')
         } else if (form.custom_url.length > 50) {
-          errors.custom_url = 'Custom URL must be less than 50 characters'
+          errors.custom_url = __('custom_url_max_length')
         }
       }
 
       // Expiration validation
       if (form.expiration_type === 'custom') {
         if (!form.expiration_date) {
-          errors.expiration_date = 'Expiration date is required'
+          errors.expiration_date = __('expiration_date_required')
         }
         if (!form.expiration_time) {
-          errors.expiration_time = 'Expiration time is required'
+          errors.expiration_time = __('expiration_time_required')
         }
 
         if (form.expiration_date && form.expiration_time) {
@@ -398,14 +399,14 @@ export default {
           const now = new Date()
           
           if (expirationDateTime <= now) {
-            errors.expiration_date = 'Expiration must be in the future'
+            errors.expiration_date = __('expiration_future_required')
           }
         }
       }
 
       // Password validation
       if (form.require_password && !form.password) {
-        errors.password = 'Password is required when password protection is enabled'
+        errors.password = __('password_required_when_enabled')
       }
 
       return Object.keys(errors).length === 0
@@ -413,7 +414,7 @@ export default {
 
     const handleSubmit = async () => {
       if (!validateForm()) {
-        showAlert('error', 'Please fix the errors below')
+        showAlert('error', __('fix_errors_below'))
         return
       }
 
@@ -437,7 +438,7 @@ export default {
 
         emit('save', linkData)
       } catch (error) {
-        showAlert('error', 'Failed to generate join link')
+        showAlert('error', __('failed_generate_join_link'))
       } finally {
         isSubmitting.value = false
       }

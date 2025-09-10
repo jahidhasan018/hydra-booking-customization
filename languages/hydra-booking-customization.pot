@@ -291,9 +291,6 @@ msgstr ""
 msgid "Bio"
 msgstr ""
 
-msgid "Timezone"
-msgstr ""
-
 # Status texts
 msgid "Pending"
 msgstr ""

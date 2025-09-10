@@ -68,10 +68,11 @@ $attendee_data = [
         'display_name' => wp_get_current_user()->display_name,
         'first_name' => get_user_meta(get_current_user_id(), 'first_name', true),
         'last_name' => get_user_meta(get_current_user_id(), 'last_name', true),
+        'phone' => get_user_meta(get_current_user_id(), 'billing_phone', true),
+        'bio' => get_user_meta(get_current_user_id(), 'description', true),
     ],
     'dateFormat' => get_option('date_format'),
     'timeFormat' => get_option('time_format'),
-    'timezone' => wp_timezone_string(),
     'testMode' => ( HBC_TEST_MODE_STATUS === 'active' ),
     'translations' => [
         // Dashboard common
@@ -117,7 +118,6 @@ $attendee_data = [
         'last_name' => __('Last Name', 'hydra-booking-customization'),
         'email' => __('Email', 'hydra-booking-customization'),
         'phone' => __('Phone', 'hydra-booking-customization'),
-        'timezone' => __('Timezone', 'hydra-booking-customization'),
         
         // Status texts
         'pending' => __('Pending', 'hydra-booking-customization'),

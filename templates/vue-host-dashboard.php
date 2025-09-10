@@ -71,7 +71,6 @@ $host_data = [
     ],
     'dateFormat' => get_option('date_format'),
     'timeFormat' => get_option('time_format'),
-    'timezone' => wp_timezone_string(),
     'testMode' => ( HBC_TEST_MODE_STATUS === 'active' ),
     'capabilities' => [
         'manage_bookings' => current_user_can('manage_options'),
@@ -131,7 +130,6 @@ $host_data = [
         'email' => __('Email', 'hydra-booking-customization'),
         'phone' => __('Phone', 'hydra-booking-customization'),
         'bio' => __('Bio', 'hydra-booking-customization'),
-        'timezone' => __('Timezone', 'hydra-booking-customization'),
         
         // Status texts
         'pending' => __('Pending', 'hydra-booking-customization'),

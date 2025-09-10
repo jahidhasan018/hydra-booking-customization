@@ -415,21 +415,6 @@ class HostDashboard {
 					<textarea id="bio" name="bio" rows="4"><?php echo esc_textarea( $host_data['bio'] ?? $user->description ); ?></textarea>
 				</div>
 				
-				<div class="hbc-form-group">
-					<label for="timezone"><?php _e( 'Timezone', 'hydra-booking-customization' ); ?></label>
-					<select id="timezone" name="timezone">
-						<?php 
-						$selected_timezone = $host_data['timezone'] ?? get_option( 'timezone_string' );
-						$timezones = timezone_identifiers_list();
-						foreach ( $timezones as $timezone ) :
-						?>
-							<option value="<?php echo esc_attr( $timezone ); ?>" <?php selected( $selected_timezone, $timezone ); ?>>
-								<?php echo esc_html( $timezone ); ?>
-							</option>
-						<?php endforeach; ?>
-					</select>
-				</div>
-				
 				<div class="hbc-form-actions">
 					<button type="submit" class="button button-primary"><?php _e( 'Update Profile', 'hydra-booking-customization' ); ?></button>
 				</div>
@@ -972,10 +957,9 @@ class HostDashboard {
 		
 		$first_name = sanitize_text_field( $_POST['first_name'] ?? '' );
 		$last_name = sanitize_text_field( $_POST['last_name'] ?? '' );
-		$email = sanitize_email( $_POST['user_email'] ?? '' );
+		$email = sanitize_email( $_POST['email'] ?? '' );
 		$phone = sanitize_text_field( $_POST['phone'] ?? '' );
 		$bio = sanitize_textarea_field( $_POST['bio'] ?? '' );
-		$timezone = sanitize_text_field( $_POST['timezone'] ?? '' );
 		
 		// Handle password change if provided
 		$current_password = sanitize_text_field( $_POST['current_password'] ?? '' );
@@ -1009,7 +993,6 @@ class HostDashboard {
 			'email' => $email,
 			'phone_number' => $phone,
 			'about' => $bio,
-			'time_zone' => $timezone,
 		);
 		
 		$result = $wpdb->update(

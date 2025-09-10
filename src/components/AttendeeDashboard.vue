@@ -5,7 +5,7 @@
       <div class="bg-white p-6 rounded-lg shadow-lg">
         <div class="flex items-center space-x-3">
           <div class="loading-spinner"></div>
-          <span class="text-gray-700">Loading...</span>
+          <span class="text-gray-700">{{ __('loading') }}</span>
         </div>
       </div>
     </div>
@@ -197,19 +197,19 @@
                 <!-- Host Name -->
                 <div>
                   <p class="text-sm font-medium text-gray-700">{{ __('host') }}</p>
-                  <p class="text-sm text-gray-900 truncate">{{ (booking.host_first_name + ' ' + booking.host_last_name).trim() || booking.host_name || 'N/A' }}</p>
+                  <p class="text-sm text-gray-900 truncate">{{ (booking.host_first_name + ' ' + booking.host_last_name).trim() || booking.host_name || __('not_available') }}</p>
                 </div>
 
                 <!-- Email -->
                 <div>
                   <p class="text-sm font-medium text-gray-700">{{ __('email') }}</p>
-                  <p class="text-sm text-gray-600 truncate">{{ booking.host_email || 'N/A' }}</p>
+                  <p class="text-sm text-gray-600 truncate">{{ booking.host_email || __('not_available') }}</p>
                 </div>
 
                 <!-- Duration -->
                 <div>
                   <p class="text-sm font-medium text-gray-700">{{ __('duration') }}</p>
-                  <p class="text-sm text-gray-600">{{ booking.duration || 'N/A' }}</p>
+                  <p class="text-sm text-gray-600">{{ booking.duration || __('not_available') }}</p>
                 </div>
 
                 <!-- Booking Date -->
@@ -241,6 +241,9 @@
           <div class="flex justify-between items-center mb-6">
             <h3 class="text-lg font-medium text-gray-900">{{ __('profile_settings') }}</h3>
             <button @click="openProfileModal" class="btn-primary">
+              <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+              </svg>
               {{ __('edit_profile') }}
             </button>
           </div>
@@ -248,23 +251,23 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label class="form-label">{{ __('first_name') }}</label>
-              <p class="text-gray-700">{{ profile.first_name || 'Not set' }}</p>
+              <p class="text-gray-700">{{ profile.first_name || __('not_set') }}</p>
             </div>
             <div>
               <label class="form-label">{{ __('last_name') }}</label>
-              <p class="text-gray-700">{{ profile.last_name || 'Not set' }}</p>
+              <p class="text-gray-700">{{ profile.last_name || __('not_set') }}</p>
             </div>
             <div>
               <label class="form-label">{{ __('email') }}</label>
-              <p class="text-gray-700">{{ profile.email || 'Not set' }}</p>
+              <p class="text-gray-700">{{ profile.email || __('not_set') }}</p>
             </div>
             <div>
               <label class="form-label">{{ __('phone') }}</label>
-              <p class="text-gray-700">{{ profile.phone || 'Not set' }}</p>
+              <p class="text-gray-700">{{ profile.phone || __('not_set') }}</p>
             </div>
             <div class="md:col-span-2">
-              <label class="form-label">{{ __('timezone') }}</label>
-              <p class="text-gray-700">{{ profile.timezone || 'Not set' }}</p>
+              <label class="form-label">{{ __('bio') }}</label>
+              <p class="text-gray-700">{{ profile.bio || __('not_set') }}</p>
             </div>
           </div>
         </div>
@@ -284,13 +287,13 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted, watch, inject } from 'vue'
+import { inject, onMounted, reactive, ref, watch } from 'vue'
 import { attendeeAPI } from '../utils/api.js'
-import { formatDateTime, getStatusClass, getStatusText, handleApiError, copyToClipboard } from '../utils/helpers.js'
 import { isTestModeActiveForBooking } from '../utils/constants.js'
+import { formatDateTime, getStatusClass, getStatusText, handleApiError } from '../utils/helpers.js'
 import { __ } from '../utils/i18n.js'
-import ProfileModal from './modals/ProfileModal.vue'
 import CountdownTimer from './CountdownTimer.vue'
+import ProfileModal from './modals/ProfileModal.vue'
 
 export default {
   name: 'AttendeeDashboard',
@@ -323,15 +326,15 @@ export default {
 
     // Tab configuration
     const tabs = [
-      { id: 'bookings', name: 'My Bookings' },
-      { id: 'profile', name: 'Profile' }
+      { id: 'bookings', name: __('my_bookings_tab') },
+      { id: 'profile', name: __('profile_tab') }
     ]
 
     // Booking filter configuration
     const bookingFilters = [
-      { id: 'upcoming', name: 'Upcoming' },
-      { id: 'completed', name: 'Completed' },
-      { id: 'cancelled', name: 'Cancelled' }
+      { id: 'upcoming', name: __('upcoming_filter') },
+      { id: 'completed', name: __('completed_filter') },
+      { id: 'cancelled', name: __('cancelled_filter') }
     ]
 
     // Methods
@@ -408,19 +411,24 @@ export default {
         const data = await attendeeAPI.getProfile()
         // Process profile data from API
         
+        console.log('Profile:', data);
+
         if (data) {
           // Map the profile data correctly from WordPress user data
           Object.assign(profile, {
             first_name: data.first_name || '',
             last_name: data.last_name || '',
-            email: data.email || '',
-            display_name: data.name || '',
+            email: data.email || data.user_email || '',
+            display_name: data.name || data.display_name || '',
             phone: data.phone || '',
+            bio: data.bio || data.description || '',
             timezone: data.timezone || ''
           })
           
           // Profile data assigned successfully
         }
+
+        
       } catch (error) {
         console.error('Failed to load profile:', error)
         showAlert('error', handleApiError(error))
@@ -576,13 +584,13 @@ export default {
     const getMeetingButtonText = (booking) => {
       // If testing mode is enabled, always show Start Meeting
       if (isTestModeActiveForBooking(booking)) {
-        return 'Start Meeting'
+        return __('start_meeting_btn')
       }
       
       const meetingAvailable = isMeetingAvailable(booking)
       
       if (!meetingAvailable) {
-        return 'Scheduled'
+        return __('scheduled_status')
       }
       
       const now = new Date()
@@ -590,10 +598,10 @@ export default {
       const meetingEndTime = new Date(booking.meeting_dates + ' ' + booking.end_time)
       
       if (now >= meetingDateTime && now <= meetingEndTime) {
-        return 'Start Meeting'
+        return __('start_meeting_btn')
       } else {
         const minutesUntil = Math.ceil((meetingDateTime.getTime() - now.getTime()) / (1000 * 60))
-        return `Available in ${minutesUntil}m`
+        return `${__('available_in')} ${minutesUntil}${__('min')}`
       }
     }
 

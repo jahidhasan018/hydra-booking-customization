@@ -1,6 +1,6 @@
 {
-  "_style-BLrjfZNT.js": {
-    "file": "style-BLrjfZNT.js",
+  "_style-B4qtJ4rK.js": {
+    "file": "style-B4qtJ4rK.js",
     "name": "style"
   },
   "src/attendee-dashboard.js": {
@@ -9,7 +9,7 @@
     "src": "src/attendee-dashboard.js",
     "isEntry": true,
     "imports": [
-      "_style-BLrjfZNT.js"
+      "_style-B4qtJ4rK.js"
     ]
   },
   "src/host-dashboard.js": {
@@ -18,7 +18,7 @@
     "src": "src/host-dashboard.js",
     "isEntry": true,
     "imports": [
-      "_style-BLrjfZNT.js"
+      "_style-B4qtJ4rK.js"
     ]
   },
   "style.css": {

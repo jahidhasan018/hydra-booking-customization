@@ -5,7 +5,7 @@
       <div class="bg-white p-6 rounded-lg shadow-lg">
         <div class="flex items-center space-x-3">
           <div class="loading-spinner"></div>
-          <span class="text-gray-700">Loading...</span>
+          <span class="text-gray-700">{{ __('loading') }}</span>
         </div>
       </div>
     </div>
@@ -211,28 +211,24 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label class="form-label">First Name</label>
-              <p class="text-gray-700">{{ profile.first_name || 'Not set' }}</p>
+              <label class="form-label">{{ __('first_name') }}</label>
+              <p class="text-gray-700">{{ profile.first_name || __('not_set') }}</p>
             </div>
             <div>
-              <label class="form-label">Last Name</label>
-              <p class="text-gray-700">{{ profile.last_name || 'Not set' }}</p>
+              <label class="form-label">{{ __('last_name') }}</label>
+              <p class="text-gray-700">{{ profile.last_name || __('not_set') }}</p>
             </div>
             <div>
-              <label class="form-label">Email</label>
-              <p class="text-gray-700">{{ profile.email || 'Not set' }}</p>
+              <label class="form-label">{{ __('email') }}</label>
+              <p class="text-gray-700">{{ profile.email || __('not_set') }}</p>
             </div>
             <div>
-              <label class="form-label">Phone</label>
-              <p class="text-gray-700">{{ profile.phone || 'Not set' }}</p>
+              <label class="form-label">{{ __('phone') }}</label>
+              <p class="text-gray-700">{{ profile.phone || __('not_set') }}</p>
             </div>
             <div class="md:col-span-2">
-              <label class="form-label">Bio</label>
-              <p class="text-gray-700">{{ profile.bio || 'Not set' }}</p>
-            </div>
-            <div>
-              <label class="form-label">Timezone</label>
-              <p class="text-gray-700">{{ profile.timezone || 'Not set' }}</p>
+              <label class="form-label">{{ __('bio') }}</label>
+              <p class="text-gray-700">{{ profile.bio || __('not_set') }}</p>
             </div>
           </div>
         </div>
@@ -245,7 +241,7 @@
               <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
               </svg>
-              Refresh
+              {{ __('refresh') }}
             </button>
           </div>
 
@@ -282,9 +278,9 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted, watch, inject } from 'vue'
+import { inject, onMounted, reactive, ref, watch } from 'vue'
 import { hostAPI } from '../utils/api.js'
-import { formatDateTime, getStatusClass, getStatusText, handleApiError, copyToClipboard } from '../utils/helpers.js'
+import { copyToClipboard, formatDateTime, getStatusClass, getStatusText, handleApiError } from '../utils/helpers.js'
 import { __ } from '../utils/i18n.js'
 import BookingsList from './BookingsList.vue'
 import JoinLinksList from './JoinLinksList.vue'
@@ -335,11 +331,11 @@ export default {
 
     // Filter configuration
     const filters = [
-      { id: 'upcoming', name: 'Upcoming', icon: 'calendar' },
-      { id: 'today', name: 'Today', icon: 'clock' },
-      { id: 'completed', name: 'Completed', icon: 'check' },
-      { id: 'cancelled', name: 'Cancelled', icon: 'x' },
-      { id: 'history', name: 'All History', icon: 'archive' }
+      { id: 'upcoming', name: __('upcoming_filter'), icon: 'calendar' },
+      { id: 'today', name: __('today_filter'), icon: 'clock' },
+      { id: 'completed', name: __('completed_filter'), icon: 'check' },
+      { id: 'cancelled', name: __('cancelled_filter'), icon: 'x' },
+      { id: 'history', name: __('all_history_filter'), icon: 'archive' }
     ]
 
     // Methods
@@ -454,7 +450,6 @@ export default {
             display_name: profileData.display_name || '',
             phone: hostData.phone_number || '',
             bio: profileData.description || hostData.about || '',
-            timezone: hostData.time_zone || '',
             avatar: hostData.avatar || '',
             featured_image: hostData.featured_image || '',
             status: hostData.status || '',
@@ -481,7 +476,7 @@ export default {
         // Stats data assigned successfully
       } catch (error) {
         console.error('Failed to load stats:', error)
-        showAlert('error', 'Failed to load statistics')
+        showAlert('error', __('failed_load_statistics'))
       }
     }
 
@@ -489,7 +484,7 @@ export default {
       try {
         isLoading.value = true
         await hostAPI.updateBookingStatus(bookingId, status)
-        showAlert('success', `Booking ${status} successfully`)
+        showAlert('success', __('booking_status_updated').replace('{status}', status))
         await loadBookings(activeTab.value)
         await loadStats()
       } catch (error) {
@@ -519,7 +514,7 @@ export default {
         showBookingModal.value = true
       } catch (error) {
         console.error('Error fetching booking details:', error)
-        showAlert('error', 'Error fetching booking details: ' + (error.response?.data?.message || error.message))
+        showAlert('error', __('booking_details_error') + (error.response?.data?.message || error.message))
       }
     }
 
@@ -536,7 +531,7 @@ export default {
           linkData.customUrl
         )
         showJoinLinkModal.value = false
-        showAlert('success', 'Join link generated successfully')
+        showAlert('success', __('join_link_generated'))
         await loadJoinLinks()
         await loadStats()
       } catch (error) {
@@ -550,7 +545,7 @@ export default {
       try {
         isLoading.value = true
         await hostAPI.sendJoinLink(linkId)
-        showAlert('success', 'Join link sent to attendees')
+        showAlert('success', __('join_link_sent'))
       } catch (error) {
         showAlert('error', handleApiError(error))
       } finally {
@@ -561,9 +556,9 @@ export default {
     const copyJoinLink = async (url) => {
       const success = await copyToClipboard(url)
       if (success) {
-        showAlert('success', 'Join link copied to clipboard')
+        showAlert('success', __('join_link_copied'))
       } else {
-        showAlert('error', 'Failed to copy link')
+        showAlert('error', __('failed_copy_link'))
       }
     }
 
@@ -577,7 +572,7 @@ export default {
         await hostAPI.updateProfile(profileData)
         Object.assign(profile, profileData)
         showProfileModal.value = false
-        showAlert('success', 'Profile updated successfully')
+        showAlert('success', __('profile_updated'))
       } catch (error) {
         showAlert('error', handleApiError(error))
       } finally {
@@ -596,7 +591,7 @@ export default {
           loadStats()
         ])
       } catch (error) {
-        showAlert('error', 'Failed to load dashboard data')
+        showAlert('error', __('failed_load_dashboard'))
       } finally {
         isLoading.value = false
       }
@@ -620,7 +615,7 @@ export default {
 
     // Handle logout
     const handleLogout = async () => {
-      if (confirm('Are you sure you want to logout?')) {
+      if (confirm(__('logout_confirmation'))) {
         try {
           const response = await fetch(window.hbcHostData.ajaxUrl, {
             method: 'POST',
@@ -635,11 +630,11 @@ export default {
           if (data.success) {
             window.location.href = data.data.login_url
           } else {
-            showAlert('error', 'Logout failed. Please try again.')
+            showAlert('error', __('logout_failed_retry'))
           }
         } catch (error) {
           console.error('Error:', error)
-          showAlert('error', 'Logout failed. Please try again.')
+          showAlert('error', __('logout_failed_retry'))
         }
       }
     }
