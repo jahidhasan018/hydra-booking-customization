@@ -33,7 +33,7 @@
       </div>
 
       <!-- Stats Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div class="card">
           <div class="card-body">
             <div class="flex items-center">
@@ -52,23 +52,7 @@
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-body">
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <div class="w-8 h-8 bg-warning-100 rounded-full flex items-center justify-center">
-                  <svg class="w-5 h-5 text-warning-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
-                  </svg>
-                </div>
-              </div>
-              <div class="ml-4">
-                <p class="text-2xl font-semibold text-gray-900">{{ stats.upcoming_meetings || 0 }}</p>
-                <p class="text-sm text-gray-600">{{ __('upcoming') }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
+
 
         <div class="card">
           <div class="card-body">
@@ -313,7 +297,7 @@ export default {
       type: '',
       message: ''
     })
-    const activeFilter = ref('upcoming')
+    const activeFilter = ref('today')
     const logoutUrl = ref(window.hbcHostData?.logoutUrl || '/wp-login.php?action=logout')
 
     // Modal states
@@ -331,7 +315,6 @@ export default {
 
     // Filter configuration
     const filters = [
-      { id: 'upcoming', name: __('upcoming_filter'), icon: 'calendar' },
       { id: 'today', name: __('today_filter'), icon: 'clock' },
       { id: 'completed', name: __('completed_filter'), icon: 'check' },
       { id: 'cancelled', name: __('cancelled_filter'), icon: 'x' },
@@ -399,9 +382,18 @@ export default {
                    (booking.status === 'confirmed' || booking.status === 'pending')
           })
         } else if (filterType === 'completed') {
-          allBookings = allBookings.filter(booking => 
-            booking.status === 'completed'
-          )
+          // Show bookings that are marked as completed OR have ended (past end time)
+          allBookings = allBookings.filter(booking => {
+            if (booking.status === 'completed') {
+              return true
+            }
+            // Check if meeting has ended
+            const bookingDate = booking.meeting_dates
+            const endTime = booking.end_time || '23:59:59'
+            const bookingEndDateTime = new Date(bookingDate + ' ' + endTime)
+            const now = new Date()
+            return bookingEndDateTime < now
+          })
         } else if (filterType === 'cancelled') {
           allBookings = allBookings.filter(booking => 
             booking.status === 'cancelled' || booking.status === 'canceled'

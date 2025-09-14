@@ -586,9 +586,10 @@ class HostDashboard {
 		$bookings_table = $wpdb->prefix . 'tfhb_bookings';
 		$attendees_table = $wpdb->prefix . 'tfhb_attendees';
 		
+		// Use WordPress timezone for consistent time handling
 		$today = current_time( 'Y-m-d' );
 		$month_start = current_time( 'Y-m-01' );
-		$current_time = current_time( 'mysql' );
+		$current_datetime = current_time( 'Y-m-d H:i:s' );
 		
 		// Today's meetings
 		$today_meetings = $wpdb->get_var( $wpdb->prepare(
@@ -599,25 +600,24 @@ class HostDashboard {
 			$host_id, $today
 		) );
 		
-		// Upcoming meetings
+		// Upcoming meetings (future meetings including today's future meetings)
 		$upcoming_meetings = $wpdb->get_var( $wpdb->prepare(
 			"SELECT COUNT(DISTINCT b.id) 
 			FROM {$bookings_table} b 
 			INNER JOIN {$attendees_table} a ON b.id = a.booking_id 
-			WHERE a.host_id = %d AND CONCAT(b.meeting_dates, ' ', b.start_time) > %s",
-			$host_id, $current_time
+			WHERE a.host_id = %d AND CONCAT(b.meeting_dates, ' ', COALESCE(b.start_time, '00:00:00')) > %s",
+			$host_id, $current_datetime
 		) );
 		
-		// Completed meetings this month
+		// Completed meetings this month (meetings that have ended OR have completed status)
 		$completed_meetings = $wpdb->get_var( $wpdb->prepare(
 			"SELECT COUNT(DISTINCT b.id) 
 			FROM {$bookings_table} b 
 			INNER JOIN {$attendees_table} a ON b.id = a.booking_id 
 			WHERE a.host_id = %d 
-			AND CONCAT(b.meeting_dates, ' ', b.start_time) < %s 
 			AND b.meeting_dates >= %s 
-			AND b.status = 'confirmed'",
-			$host_id, $current_time, $month_start
+			AND (b.status = 'completed' OR CONCAT(b.meeting_dates, ' ', COALESCE(b.end_time, '23:59:59')) < %s)",
+			$host_id, $month_start, $current_datetime
 		) );
 		
 		// Active join links
@@ -626,10 +626,10 @@ class HostDashboard {
 			FROM {$bookings_table} b 
 			INNER JOIN {$attendees_table} a ON b.id = a.booking_id 
 			WHERE a.host_id = %d 
-			AND CONCAT(b.meeting_dates, ' ', b.start_time) > %s 
+			AND CONCAT(b.meeting_dates, ' ', COALESCE(b.start_time, '00:00:00')) > %s 
 			AND b.meeting_locations IS NOT NULL 
 			AND b.meeting_locations != ''",
-			$host_id, $current_time
+			$host_id, $current_datetime
 		) );
 		
 		return array(
@@ -654,7 +654,8 @@ class HostDashboard {
 		$bookings_table = $wpdb->prefix . 'tfhb_bookings';
 		$meetings_table = $wpdb->prefix . 'tfhb_meetings';
 		
-		$current_time = current_time( 'mysql' );
+		// Use WordPress timezone for consistent time handling
+		$current_datetime = current_time( 'Y-m-d H:i:s' );
 		$today = current_time( 'Y-m-d' );
 		
 		// Build the base query
@@ -686,13 +687,13 @@ class HostDashboard {
 				$order_by = 'ORDER BY b.start_time ASC';
 				break;
 			case 'upcoming':
-				$query .= " AND CONCAT(b.meeting_dates, ' ', b.start_time) > %s";
-				$query_params[] = $current_time;
+				$query .= " AND CONCAT(b.meeting_dates, ' ', COALESCE(b.start_time, '00:00:00')) > %s";
+				$query_params[] = $current_datetime;
 				$order_by = 'ORDER BY b.meeting_dates ASC, b.start_time ASC';
 				break;
 			case 'past':
-				$query .= " AND CONCAT(b.meeting_dates, ' ', b.start_time) < %s";
-				$query_params[] = $current_time;
+				$query .= " AND CONCAT(b.meeting_dates, ' ', COALESCE(b.end_time, '23:59:59')) < %s";
+				$query_params[] = $current_datetime;
 				$order_by = 'ORDER BY b.meeting_dates DESC, b.start_time DESC';
 				break;
 			default:
@@ -718,7 +719,7 @@ class HostDashboard {
 		$bookings_table = $wpdb->prefix . 'tfhb_bookings';
 		$meetings_table = $wpdb->prefix . 'tfhb_meetings';
 		
-		$current_time = current_time( 'mysql' );
+		$current_datetime = current_time( 'Y-m-d H:i:s' );
 		
 		$query = "
 			SELECT 
@@ -732,12 +733,12 @@ class HostDashboard {
 			LEFT JOIN {$meetings_table} m ON b.meeting_id = m.id
 			LEFT JOIN {$attendees_table} a ON b.id = a.booking_id
 			WHERE a.host_id = %d 
-			AND CONCAT(b.meeting_dates, ' ', b.start_time) > %s
+			AND CONCAT(b.meeting_dates, ' ', COALESCE(b.start_time, '00:00:00')) > %s
 			GROUP BY b.id
 			ORDER BY b.meeting_dates ASC, b.start_time ASC
 		";
 		
-		return $wpdb->get_results( $wpdb->prepare( $query, $host_id, $current_time ) );
+		return $wpdb->get_results( $wpdb->prepare( $query, $host_id, $current_datetime ) );
 	}
 
 	/**

@@ -1369,19 +1369,76 @@ class JitsiIntegration {
                 body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
                 .meeting-header { background: #0073aa; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
                 .meeting-title { margin: 0; font-size: 18px; }
+                .meeting-timer { font-size: 16px; font-weight: bold; margin-right: 20px; padding: 5px 10px; background: rgba(255,255,255,0.2); border-radius: 5px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+                .timer-elapsed { font-family: 'Courier New', monospace; }
+                .timer-duration { font-family: 'Noto Sans Bengali', Arial, sans-serif; font-size: 12px; opacity: 0.9; }
+                .meeting-timer.overtime { background: #ff4444; animation: pulse 1s infinite; }
                 .user-info { font-size: 14px; }
                 #jitsi-container { width: 100%; height: calc(100vh - 60px); }
                 .loading { text-align: center; padding: 50px; }
+                @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+                
+                /* Bengali Popup Notification Styles */
+                .meeting-notification-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.7);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 10000;
+                    font-family: 'Noto Sans Bengali', Arial, sans-serif;
+                }
+                .meeting-notification {
+                    background: white;
+                    padding: 30px;
+                    border-radius: 10px;
+                    text-align: center;
+                    max-width: 400px;
+                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+                }
+                .meeting-notification h2 {
+                    color: #d32f2f;
+                    margin-bottom: 15px;
+                    font-size: 24px;
+                }
+                .meeting-notification p {
+                    font-size: 18px;
+                    margin-bottom: 20px;
+                    color: #333;
+                }
+                .meeting-notification button {
+                    background: #0073aa;
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    font-size: 16px;
+                }
+                .meeting-notification button:hover {
+                    background: #005a87;
+                }
             </style>
+            <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
         </head>
         <body>
             <div class="meeting-header">
                 <h1 class="meeting-title"><?php echo esc_html( $booking->meeting_title ); ?></h1>
-                <div class="user-info">
-                    <?php printf( __( 'Welcome, %s', 'hydra-booking-customization' ), esc_html( $display_name ) ); ?>
-                    <?php if ( $role === 'host' ): ?>
-                        <span class="host-badge"><?php _e( '(Host)', 'hydra-booking-customization' ); ?></span>
-                    <?php endif; ?>
+                <div class="timer-duration">সময়কাল <?php echo intval( $booking->duration ?? 30 ); ?> min</div>
+                <div style="display: flex; align-items: center;">
+                    <div class="meeting-timer" id="meeting-timer">
+                    <div class="timer-elapsed">00:00</div>
+                </div>
+                    <div class="user-info">
+                        <?php printf( __( 'Welcome, %s', 'hydra-booking-customization' ), esc_html( $display_name ) ); ?>
+                        <?php if ( $role === 'host' ): ?>
+                            <span class="host-badge"><?php _e( '(Host)', 'hydra-booking-customization' ); ?></span>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
             <div id="jitsi-container">
@@ -1402,7 +1459,95 @@ class JitsiIntegration {
             ?>
             
             <script>
+                // Meeting timer and notification system
+                const bookingId = '<?php echo esc_js( $booking->id ?? 'default' ); ?>';
+                const storageKey = 'meeting_start_time_' + bookingId;
+                let meetingStartTime;
+                let meetingDuration = <?php echo intval( $booking->duration ?? 30 ); ?> * 60 * 1000; // Convert minutes to milliseconds
+                let timerInterval;
+                let notificationShown = false;
+                
+                // Initialize or retrieve meeting start time
+                function initializeMeetingTime() {
+                    const storedStartTime = localStorage.getItem(storageKey);
+                    if (storedStartTime) {
+                        meetingStartTime = new Date(parseInt(storedStartTime));
+                    } else {
+                        meetingStartTime = new Date();
+                        localStorage.setItem(storageKey, meetingStartTime.getTime().toString());
+                    }
+                }
+                
+                function updateTimer() {
+                    const now = new Date();
+                    const elapsed = now - meetingStartTime;
+                    const minutes = Math.floor(elapsed / 60000);
+                    const seconds = Math.floor((elapsed % 60000) / 1000);
+                    
+                    const timerElement = document.getElementById('meeting-timer');
+                     const elapsedElement = timerElement.querySelector('.timer-elapsed');
+                     const formattedTime = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+                     elapsedElement.textContent = formattedTime;
+                    
+                    // Check if meeting duration has elapsed
+                    if (elapsed >= meetingDuration && !notificationShown) {
+                        timerElement.classList.add('overtime');
+                        showMeetingEndNotification();
+                        notificationShown = true;
+                    }
+                }
+                
+                function showMeetingEndNotification() {
+                    const overlay = document.createElement('div');
+                    overlay.className = 'meeting-notification-overlay';
+                    overlay.innerHTML = `
+                        <div class="meeting-notification">
+                            <h2>মিটিংয়ের সময় শেষ</h2>
+                            <p>মিটিংয়ের সময় শেষ হয়েছে</p>
+                            <button onclick="closeMeetingNotification()">ঠিক আছে</button>
+                        </div>
+                    `;
+                    document.body.appendChild(overlay);
+                    
+                    // Auto-close after 10 seconds if not manually closed
+                    setTimeout(() => {
+                        if (document.body.contains(overlay)) {
+                            overlay.remove();
+                        }
+                    }, 10000);
+                }
+                
+                function closeMeetingNotification() {
+                     const overlay = document.querySelector('.meeting-notification-overlay');
+                     if (overlay) {
+                         overlay.remove();
+                     }
+                 }
+                 
+                 // Make function globally accessible
+                 window.closeMeetingNotification = closeMeetingNotification;
+                
+                // Start timer when page loads
+                function startMeetingTimer() {
+                    initializeMeetingTime();
+                    timerInterval = setInterval(updateTimer, 1000);
+                    updateTimer(); // Initial call
+                }
+                
+                // Reset timer for new meeting session
+                function resetMeetingTimer() {
+                    localStorage.removeItem(storageKey);
+                    initializeMeetingTime();
+                    notificationShown = false;
+                    const timerElement = document.getElementById('meeting-timer');
+                    if (timerElement) {
+                        timerElement.classList.remove('overtime');
+                    }
+                }
+                
                 document.addEventListener('DOMContentLoaded', function() {
+                    // Start the meeting timer
+                    startMeetingTimer();
                     // Browser compatibility check
                     function checkBrowserCompatibility() {
                         const userAgent = navigator.userAgent;
@@ -1537,6 +1682,10 @@ class JitsiIntegration {
                         
                         // Handle meeting events
                         api.addEventListener('readyToClose', function() {
+                            // Stop the timer when meeting ends
+                            if (timerInterval) {
+                                clearInterval(timerInterval);
+                            }
                             if (window.opener) {
                                 window.close();
                             } else {
@@ -1564,7 +1713,18 @@ class JitsiIntegration {
                         });
                         
                         api.addEventListener('videoConferenceJoined', function(event) {
-                            // Video conference joined event
+                            // Video conference joined event - synchronize timer
+                            // Check if this is a fresh meeting session
+                            const storedStartTime = localStorage.getItem(storageKey);
+                            const now = new Date();
+                            
+                            // If stored time is more than 5 minutes old, consider it a new session
+                            if (storedStartTime) {
+                                const timeDiff = now.getTime() - parseInt(storedStartTime);
+                                if (timeDiff > 5 * 60 * 1000) { // 5 minutes
+                                    resetMeetingTimer();
+                                }
+                            }
                         });
                         
                         // Remove loading message once API is ready
