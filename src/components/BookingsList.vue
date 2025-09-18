@@ -457,8 +457,11 @@ export default {
 
     const onMeetingExpired = (booking) => {
       console.log('Meeting expired:', booking)
-      // Emit event to parent component to refresh bookings
+      // Force a reactive update to refresh button state when countdown ends
+      // This ensures the button becomes functional when the meeting starts
       emit('meeting-expired', booking)
+      // Trigger a re-render by emitting a refresh event
+      emit('refresh-bookings')
     }
 
     const onMeetingUrgent = (booking, timeRemaining) => {

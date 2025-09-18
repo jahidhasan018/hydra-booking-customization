@@ -319,6 +319,7 @@ export default {
       message: ''
     })
     const logoutUrl = ref(window.hbcAttendeeData?.logoutUrl || '/wp-login.php?action=logout')
+    const buttonStateRefresh = ref(0) // Trigger for button state updates
 
     // Modal states
     const showProfileModal = ref(false)
@@ -544,6 +545,9 @@ export default {
     }
 
     const isMeetingAvailable = (booking) => {
+      // Force reactivity by accessing the refresh trigger
+      buttonStateRefresh.value
+      
       // Check if test mode is active using centralized constant
       if (isTestModeActiveForBooking(booking)) {
         return true
@@ -721,7 +725,18 @@ export default {
 
     const onMeetingExpired = (booking) => {
       console.log('Meeting expired:', booking)
-      // Optionally refresh bookings to update status
+      
+      // Force button state refresh by incrementing the trigger
+      buttonStateRefresh.value++
+      
+      // Find the booking in our array and update it to trigger reactivity
+      const bookingIndex = bookings.value.findIndex(b => b.id === booking.id)
+      if (bookingIndex !== -1) {
+        // Update the booking object to trigger Vue's reactivity
+        bookings.value[bookingIndex] = { ...bookings.value[bookingIndex] }
+      }
+      
+      // Also reload bookings to ensure data consistency
       loadBookings()
     }
 
