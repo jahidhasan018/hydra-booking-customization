@@ -156,8 +156,25 @@ class Plugin {
 			HBC_VERSION
 		);
 		
-		// Dashboard assets are now handled by shortcode templates
-		// Keep this method for any future global frontend assets
+		// Enqueue public.js script on single meeting page
+		wp_enqueue_script(
+			'hbc-public',
+			HBC_PLUGIN_URL . 'assets/js/public.js',
+			array( 'jquery' ),
+			HBC_VERSION,
+			true
+		);
+
+		// User info
+		if(is_user_logged_in()){
+			$user = wp_get_current_user();
+			$user_email = $user->user_email;
+			$username = $user->user_login;
+			wp_localize_script( 'hbc-public', 'hbc_user_info', array(
+				'email' => $user_email,
+				'username' => $username,
+			));
+		}
 	}
 
 	/**
