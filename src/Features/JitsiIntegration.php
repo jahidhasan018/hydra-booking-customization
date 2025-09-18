@@ -1473,26 +1473,12 @@ class JitsiIntegration {
                     if (storedStartTime) {
                         meetingStartTime = new Date(parseInt(storedStartTime));
                     } else {
-                        // Don't set start time until user actually joins the meeting
-                        meetingStartTime = null;
-                    }
-                }
-                
-                // Start the meeting timer when user joins
-                function startMeetingSession() {
-                    if (!meetingStartTime) {
                         meetingStartTime = new Date();
                         localStorage.setItem(storageKey, meetingStartTime.getTime().toString());
                     }
-                    startMeetingTimer();
                 }
                 
                 function updateTimer() {
-                    // Don't update timer if meeting hasn't started yet
-                    if (!meetingStartTime) {
-                        return;
-                    }
-                    
                     const now = new Date();
                     const elapsed = now - meetingStartTime;
                     const minutes = Math.floor(elapsed / 60000);
@@ -1512,18 +1498,12 @@ class JitsiIntegration {
                 }
                 
                 function showMeetingEndNotification() {
-                    const now = new Date();
-                    const elapsed = now - meetingStartTime;
-                    const totalMinutes = Math.floor(elapsed / 60000);
-                    const durationMinutes = Math.floor(meetingDuration / 60000);
-                    
                     const overlay = document.createElement('div');
                     overlay.className = 'meeting-notification-overlay';
                     overlay.innerHTML = `
                         <div class="meeting-notification">
                             <h2>মিটিংয়ের সময় শেষ</h2>
                             <p>মিটিংয়ের সময় শেষ হয়েছে</p>
-                            <p>সময়কাল: ${durationMinutes} মিনিট (${totalMinutes} মিনিট অতিক্রান্ত)</p>
                             <button onclick="closeMeetingNotification()">ঠিক আছে</button>
                         </div>
                     `;
@@ -1566,8 +1546,8 @@ class JitsiIntegration {
                 }
                 
                 document.addEventListener('DOMContentLoaded', function() {
-                    // Initialize meeting time but don't start timer yet
-                    initializeMeetingTime();
+                    // Start the meeting timer
+                    startMeetingTimer();
                     // Browser compatibility check
                     function checkBrowserCompatibility() {
                         const userAgent = navigator.userAgent;
@@ -1733,9 +1713,7 @@ class JitsiIntegration {
                         });
                         
                         api.addEventListener('videoConferenceJoined', function(event) {
-                            // Video conference joined event - start the meeting timer
-                            startMeetingSession();
-                            
+                            // Video conference joined event - synchronize timer
                             // Check if this is a fresh meeting session
                             const storedStartTime = localStorage.getItem(storageKey);
                             const now = new Date();
