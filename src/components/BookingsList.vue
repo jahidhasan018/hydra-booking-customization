@@ -6,7 +6,6 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 4v10m6-10v10m-6 0h6" />
       </svg>
       <h3 class="mt-2 text-sm font-medium text-gray-900">{{ __('no_bookings_found') }}</h3>
-      <p class="mt-1 text-sm text-gray-500">{{ __('no_bookings_match') }}</p>
     </div>
 
     <!-- Bookings Grid -->

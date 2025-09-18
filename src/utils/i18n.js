@@ -224,6 +224,7 @@ const translations = {
   'logout_confirm': 'আপনি কি নিশ্চিত যে আপনি লগআউট করতে চান?',
   'logout_failed': 'লগআউট ব্যর্থ। অনুগ্রহ করে আবার চেষ্টা করুন।',
   'profile_updated': 'প্রোফাইল সফলভাবে আপডেট হয়েছে',
+  'start_meeting_btn': 'মিটিং শুরু করুন',
   
   // হোস্ট ড্যাশবোর্ড
   'host_dashboard': 'ড্যাশবোর্ড',
