@@ -1258,7 +1258,7 @@ class JitsiIntegration {
         $meetings_table = $wpdb->prefix . 'tfhb_meetings';
         
         $query = $wpdb->prepare(
-            "SELECT b.*, m.title as meeting_title 
+            "SELECT b.*, m.title as meeting_title, m.duration 
              FROM {$bookings_table} b 
              LEFT JOIN {$meetings_table} m ON b.meeting_id = m.id 
              WHERE b.id = %d",
@@ -1467,6 +1467,21 @@ class JitsiIntegration {
                 let timerInterval;
                 let notificationShown = false;
                 
+                // Actual scheduled meeting times from booking data
+                const scheduledMeetingDate = '<?php echo esc_js( $booking->meeting_dates ?? '' ); ?>';
+                const scheduledStartTime = '<?php echo esc_js( $booking->start_time ?? '' ); ?>';
+                const scheduledEndTime = '<?php echo esc_js( $booking->end_time ?? '' ); ?>';
+                
+                // Calculate actual meeting end time from scheduled data
+                let actualMeetingEndTime = null;
+                if (scheduledMeetingDate && scheduledEndTime) {
+                    actualMeetingEndTime = new Date(scheduledMeetingDate + ' ' + scheduledEndTime);
+                } else if (scheduledMeetingDate && scheduledStartTime) {
+                    // Fallback: calculate end time from start time + duration
+                    const startDateTime = new Date(scheduledMeetingDate + ' ' + scheduledStartTime);
+                    actualMeetingEndTime = new Date(startDateTime.getTime() + meetingDuration);
+                }
+                
                 // Initialize or retrieve meeting start time
                 function initializeMeetingTime() {
                     const storedStartTime = localStorage.getItem(storageKey);
@@ -1489,8 +1504,18 @@ class JitsiIntegration {
                      const formattedTime = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
                      elapsedElement.textContent = formattedTime;
                     
-                    // Check if meeting duration has elapsed
-                    if (elapsed >= meetingDuration && !notificationShown) {
+                    // Check if actual meeting time has expired (current time > scheduled end time)
+                    let shouldShowExpiredNotification = false;
+                    
+                    if (actualMeetingEndTime) {
+                        // Use actual scheduled end time
+                        shouldShowExpiredNotification = now > actualMeetingEndTime;
+                    } else {
+                        // Fallback to duration-based check if scheduled times are not available
+                        shouldShowExpiredNotification = elapsed >= meetingDuration;
+                    }
+                    
+                    if (shouldShowExpiredNotification && !notificationShown) {
                         timerElement.classList.add('overtime');
                         showMeetingEndNotification();
                         notificationShown = true;

@@ -355,11 +355,11 @@ export default {
     const getMeetingButtonText = (booking, userType) => {
       // If testing mode is enabled, always show Start Meeting for both hosts and attendees
       if (isTestModeActiveForBooking(booking)) {
-        return 'Start Meeting'
+        return __('start_meeting_btn', 'hydra-booking-customization')
       }
       
       if (!isMeetingAvailable(booking)) {
-        return 'Scheduled'
+        return __('scheduled', 'hydra-booking-customization')
       }
       
       const now = new Date()
@@ -367,10 +367,10 @@ export default {
       const meetingEndTime = new Date(booking.meeting_dates + ' ' + booking.end_time)
       
       if (now >= meetingDateTime && now <= meetingEndTime) {
-        return userType === 'host' ? 'Start Meeting' : 'Start Meeting'
+        return userType === 'host' ? __('start_meeting_btn', 'hydra-booking-customization') : __('start_meeting_btn', 'hydra-booking-customization')
       } else {
         const minutesUntil = Math.ceil((meetingDateTime.getTime() - now.getTime()) / (1000 * 60))
-        return `Available in ${minutesUntil}m`
+        return __('available_in', 'hydra-booking-customization', minutesUntil)
       }
     }
 

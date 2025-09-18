@@ -1,6 +1,6 @@
 {
-  "_style-DP0CkfeG.js": {
-    "file": "style-DP0CkfeG.js",
+  "_style-gdB6UH0B.js": {
+    "file": "style-gdB6UH0B.js",
     "name": "style"
   },
   "src/attendee-dashboard.js": {
@@ -9,7 +9,7 @@
     "src": "src/attendee-dashboard.js",
     "isEntry": true,
     "imports": [
-      "_style-DP0CkfeG.js"
+      "_style-gdB6UH0B.js"
     ]
   },
   "src/host-dashboard.js": {
@@ -18,7 +18,7 @@
     "src": "src/host-dashboard.js",
     "isEntry": true,
     "imports": [
-      "_style-DP0CkfeG.js"
+      "_style-gdB6UH0B.js"
     ]
   },
   "style.css": {
