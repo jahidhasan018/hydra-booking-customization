@@ -7,9 +7,11 @@ jQuery(document).ready(function($){
         let email = hbc_user_info.email;
 
         // Fields
-        $('#email').attr('disabled', 'disabled');
-        $('#email').css('pointer-events', 'none');
+        // $('#email').attr('disabled', 'disabled');
+        // $('#email').css('pointer-events', 'none');
         $('#name').val(name);
-        $('#email').val(email);
+        $('#email').attr('value', email);
+        $('#email').removeAttr('required');
+        $('.tfhb-single-form label[for="email"]').text('Email');
     }
 });
