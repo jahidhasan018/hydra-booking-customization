@@ -1,0 +1,361 @@
+/**
+ * Toast Notifications Styles for Hydra Booking Customization
+ * 
+ * Provides modern, accessible toast notification styling that matches
+ * the plugin's design system and color palette.
+ * 
+ * @package HydraBookingCustomization
+ * @since 1.0.0
+ */
+
+/* ==========================================================================
+   Toast Container
+   ========================================================================== */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: var(--hbc-z-modal, 10000);
+    pointer-events: none;
+    max-width: 400px;
+    width: 100%;
+}
+
+/* ==========================================================================
+   Toast Base Styles
+   ========================================================================== */
+.toast {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--hbc-spacing-sm, 8px);
+    padding: var(--hbc-spacing-md, 16px);
+    margin-bottom: var(--hbc-spacing-sm, 8px);
+    border-radius: var(--hbc-border-radius-md, 12px);
+    box-shadow: var(--hbc-shadow-lg, 0 10px 30px rgba(0, 0, 0, 0.3));
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    pointer-events: auto;
+    position: relative;
+    overflow: hidden;
+    min-height: 60px;
+    
+    /* Animation */
+    transform: translateX(100%);
+    opacity: 0;
+    transition: all var(--hbc-transition-normal, 0.3s ease);
+}
+
+.toast.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.toast.hide {
+    transform: translateX(100%);
+    opacity: 0;
+}
+
+/* ==========================================================================
+   Toast Types
+   ========================================================================== */
+.toast.success {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.95) 0%, rgba(32, 201, 151, 0.95) 100%);
+    color: white;
+    border-left: 4px solid #28a745;
+}
+
+.toast.error {
+    background: linear-gradient(135deg, rgba(220, 53, 69, 0.95) 0%, rgba(231, 76, 60, 0.95) 100%);
+    color: white;
+    border-left: 4px solid #dc3545;
+}
+
+.toast.warning {
+    background: linear-gradient(135deg, rgba(253, 126, 20, 0.95) 0%, rgba(232, 62, 140, 0.95) 100%);
+    color: white;
+    border-left: 4px solid #fd7e14;
+}
+
+.toast.info {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+    color: white;
+    border-left: 4px solid #667eea;
+}
+
+/* ==========================================================================
+   Toast Content
+   ========================================================================== */
+.toast-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toast-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.toast-title {
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 1.4;
+    margin: 0 0 4px 0;
+    word-wrap: break-word;
+}
+
+.toast-message {
+    font-size: 13px;
+    line-height: 1.4;
+    margin: 0;
+    opacity: 0.9;
+    word-wrap: break-word;
+}
+
+.toast-close {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: currentColor;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    opacity: 0.7;
+    transition: opacity var(--hbc-transition-fast, 0.2s ease);
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: -2px;
+}
+
+.toast-close:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.toast-close:focus {
+    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 1px;
+}
+
+/* ==========================================================================
+   Progress Bar
+   ========================================================================== */
+.toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 0 0 var(--hbc-border-radius-md, 12px) var(--hbc-border-radius-md, 12px);
+    transform-origin: left;
+    animation: toast-progress-animation linear;
+}
+
+@keyframes toast-progress-animation {
+    from {
+        transform: scaleX(1);
+    }
+    to {
+        transform: scaleX(0);
+    }
+}
+
+/* ==========================================================================
+   Icons (using CSS shapes for better performance)
+   ========================================================================== */
+.toast-icon::before {
+    content: '';
+    display: block;
+    width: 16px;
+    height: 16px;
+}
+
+/* Success checkmark */
+.toast.success .toast-icon::before {
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>') no-repeat center;
+    background-size: contain;
+}
+
+/* Error X */
+.toast.error .toast-icon::before {
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>') no-repeat center;
+    background-size: contain;
+}
+
+/* Warning triangle */
+.toast.warning .toast-icon::before {
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>') no-repeat center;
+    background-size: contain;
+}
+
+/* Info circle */
+.toast.info .toast-icon::before {
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>') no-repeat center;
+    background-size: contain;
+}
+
+/* Close X icon */
+.toast-close::before {
+    content: '';
+    display: block;
+    width: 12px;
+    height: 12px;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>') no-repeat center;
+    background-size: contain;
+}
+
+/* ==========================================================================
+   Responsive Design
+   ========================================================================== */
+@media (max-width: 768px) {
+    .toast-container {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+    
+    .toast {
+        padding: var(--hbc-spacing-sm, 8px) var(--hbc-spacing-md, 16px);
+        margin-bottom: var(--hbc-spacing-xs, 4px);
+    }
+    
+    .toast-title {
+        font-size: 13px;
+    }
+    
+    .toast-message {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .toast-container {
+        top: 5px;
+        right: 5px;
+        left: 5px;
+    }
+    
+    .toast {
+        padding: var(--hbc-spacing-sm, 8px);
+    }
+}
+
+/* ==========================================================================
+   Accessibility
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+    .toast {
+        transition: opacity 0.1s ease;
+    }
+    
+    .toast-progress {
+        animation: none;
+    }
+}
+
+@media (prefers-contrast: high) {
+    .toast {
+        border: 2px solid currentColor;
+        backdrop-filter: none;
+    }
+    
+    .toast.success {
+        background: #28a745;
+        color: white;
+    }
+    
+    .toast.error {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .toast.warning {
+        background: #fd7e14;
+        color: white;
+    }
+    
+    .toast.info {
+        background: #667eea;
+        color: white;
+    }
+}
+
+/* Screen reader announcements */
+.toast[role="alert"],
+.toast[role="status"] {
+    /* Ensure screen readers announce the toast */
+}
+
+/* ==========================================================================
+   Animation Variants
+   ========================================================================== */
+.toast.slide-in-right {
+    transform: translateX(100%);
+}
+
+.toast.slide-in-right.show {
+    transform: translateX(0);
+}
+
+.toast.slide-in-left {
+    transform: translateX(-100%);
+}
+
+.toast.slide-in-left.show {
+    transform: translateX(0);
+}
+
+.toast.fade-in {
+    transform: scale(0.8);
+    opacity: 0;
+}
+
+.toast.fade-in.show {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* ==========================================================================
+   Stacking and Multiple Toasts
+   ========================================================================== */
+.toast-container .toast:not(:last-child) {
+    margin-bottom: var(--hbc-spacing-sm, 8px);
+}
+
+.toast-container .toast:nth-child(n+4) {
+    /* Hide toasts beyond the 3rd one to prevent overflow */
+    display: none;
+}
+
+/* ==========================================================================
+   Dark Mode Support
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+    .toast {
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .toast.success {
+        background: linear-gradient(135deg, rgba(40, 167, 69, 0.9) 0%, rgba(32, 201, 151, 0.9) 100%);
+    }
+    
+    .toast.error {
+        background: linear-gradient(135deg, rgba(220, 53, 69, 0.9) 0%, rgba(231, 76, 60, 0.9) 100%);
+    }
+    
+    .toast.warning {
+        background: linear-gradient(135deg, rgba(253, 126, 20, 0.9) 0%, rgba(232, 62, 140, 0.9) 100%);
+    }
+    
+    .toast.info {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
+    }
+}

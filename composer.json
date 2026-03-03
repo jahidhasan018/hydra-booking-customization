@@ -1,0 +1,24 @@
+{
+    "name": "jahid018/hydra-booking-customization",
+    "description": "Extends Hydra Booking with Jitsi Meet video integration, auto-registration, host & attendee dashboards, and transient-based caching.",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Jahid",
+            "homepage": "https://github.com/jahid018"
+        }
+    ],
+    "require": {
+        "php": ">=7.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "HydraBookingCustomization\\": "src/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    }
+}
