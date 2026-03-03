@@ -5,23 +5,16 @@
       <div class="bg-white p-6 rounded-lg shadow-lg">
         <div class="flex items-center space-x-3">
           <div class="loading-spinner"></div>
-          <span class="text-gray-700">{{ __('loading') }}</span>
+          <span class="text-gray-700">Loading...</span>
         </div>
       </div>
     </div>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <!-- Header -->
-      <div class="mb-8 hbc-dashboard-header">
-        <div class="hbc-header-content">
-          <div class="hbc-header-text">
-            <h1 class="text-3xl font-bold text-gray-900">{{ __('attendee_dashboard') }}</h1>
-            <p class="mt-2 text-gray-600">{{ __('manage_bookings_profile') }}</p>
-          </div>
-          <div class="hbc-header-actions">
-            <button @click="handleLogout" class="hbc-logout-btn">{{ __('logout') }}</button>
-          </div>
-        </div>
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Attendee Dashboard</h1>
+        <p class="mt-2 text-gray-600">Manage your bookings and profile</p>
       </div>
 
       <!-- Alert Messages -->
@@ -46,7 +39,7 @@
               </div>
               <div class="ml-4">
                 <p class="text-2xl font-semibold text-gray-900">{{ stats.total_bookings || 0 }}</p>
-                <p class="text-sm text-gray-600">{{ __('total_bookings') }}</p>
+                <p class="text-sm text-gray-600">Total Bookings</p>
               </div>
             </div>
           </div>
@@ -64,7 +57,7 @@
               </div>
               <div class="ml-4">
                 <p class="text-2xl font-semibold text-gray-900">{{ stats.upcoming_bookings || 0 }}</p>
-                <p class="text-sm text-gray-600">{{ __('upcoming') }}</p>
+                <p class="text-sm text-gray-600">Upcoming</p>
               </div>
             </div>
           </div>
@@ -82,7 +75,7 @@
               </div>
               <div class="ml-4">
                 <p class="text-2xl font-semibold text-gray-900">{{ stats.completed_bookings || 0 }}</p>
-                <p class="text-sm text-gray-600">{{ __('completed') }}</p>
+                <p class="text-sm text-gray-600">Completed</p>
               </div>
             </div>
           </div>
@@ -100,7 +93,7 @@
               </div>
               <div class="ml-4">
                 <p class="text-2xl font-semibold text-gray-900">{{ stats.cancelled_bookings || 0 }}</p>
-                <p class="text-sm text-gray-600">{{ __('cancelled') }}</p>
+                <p class="text-sm text-gray-600">Cancelled</p>
               </div>
             </div>
           </div>
@@ -121,7 +114,7 @@
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             ]"
           >
-            {{ __(tab.name.toLowerCase().replace(' ', '_')) }}
+            {{ tab.name }}
           </button>
         </nav>
       </div>
@@ -150,12 +143,12 @@
         <!-- Bookings Tab -->
         <div v-show="activeTab === 'bookings'" class="p-6">
           <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-medium text-gray-900">{{ __('my_bookings') }}</h3>
+            <h3 class="text-lg font-medium text-gray-900">My Bookings</h3>
             <button @click="loadBookings" class="btn-primary">
               <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
               </svg>
-              {{ __('refresh') }}
+              Refresh
             </button>
           </div>
 
@@ -163,71 +156,61 @@
             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4m-6 0h6m-6 0V7a1 1 0 00-1 1v9a2 2 0 002 2h6a2 2 0 002-2V8a1 1 0 00-1-1V7" />
             </svg>
-            <h3 class="mt-2 text-sm font-medium text-gray-900">{{ __('no_bookings') }}</h3>
-            <p class="mt-1 text-sm text-gray-500">{{ __('no_bookings_message') }}</p>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No bookings</h3>
+            <p class="mt-1 text-sm text-gray-500">You don't have any bookings yet.</p>
           </div>
 
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div v-else class="space-y-4">
             <div
               v-for="booking in bookings"
               :key="booking.id || booking.booking_id"
-              class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden"
+              class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200"
             >
-              <!-- Card Header -->
-              <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                <h4 class="text-lg font-semibold text-gray-900 truncate">{{ booking.title || booking.meeting_title }}</h4>
-                <span :class="getStatusClass(booking.status || booking.booking_status)" class="badge text-xs px-2 py-1 rounded-full">
+              <div class="flex justify-between items-start mb-4">
+                <div>
+                  <h4 class="text-lg font-semibold text-gray-900">{{ booking.title || booking.meeting_title }}</h4>
+                  <p class="text-sm text-gray-600 mt-1">{{ booking.meeting_description }}</p>
+                </div>
+                <span :class="getStatusClass(booking.status || booking.booking_status)" class="badge">
                   {{ getStatusText(booking.status || booking.booking_status) }}
                 </span>
               </div>
 
-              <!-- Countdown Timer for Upcoming Meetings -->
-              <div v-if="currentFilter === 'upcoming' && isUpcomingMeeting(booking)" class="px-6 py-4 border-b border-gray-100">
-                <CountdownTimer
-                  :meeting-date="booking.meeting_dates"
-                  :start-time="booking.start_time"
-                  @expired="onMeetingExpired(booking)"
-                  @urgent="onMeetingUrgent(booking)"
-                  @warning="onMeetingWarning(booking)"
-                />
-              </div>
-
-              <!-- Card Content -->
-              <div class="px-6 py-4 space-y-3">
-                <!-- Host Name -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <p class="text-sm font-medium text-gray-700">{{ __('host') }}</p>
-                  <p class="text-sm text-gray-900 truncate">{{ (booking.host_first_name + ' ' + booking.host_last_name).trim() || booking.host_name || __('not_available') }}</p>
-                </div>
-
-                <!-- Email -->
-                <div>
-                  <p class="text-sm font-medium text-gray-700">{{ __('email') }}</p>
-                  <p class="text-sm text-gray-600 truncate">{{ booking.host_email || __('not_available') }}</p>
-                </div>
-
-                <!-- Duration -->
-                <div>
-                  <p class="text-sm font-medium text-gray-700">{{ __('duration') }}</p>
-                  <p class="text-sm text-gray-600">{{ booking.duration || __('not_available') }}</p>
-                </div>
-
-                <!-- Booking Date -->
-                <div>
-                  <p class="text-sm font-medium text-gray-700">{{ __('date_time') }}</p>
+                  <p class="text-sm font-medium text-gray-700">Date & Time</p>
                   <p class="text-sm text-gray-600">{{ formatDateTime(booking.meeting_dates, booking.start_time) }}</p>
                 </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-700">Duration</p>
+                  <p class="text-sm text-gray-600">{{ booking.duration || 'N/A' }}</p>
+                </div>
               </div>
 
-              <!-- Card Actions -->
-              <div class="px-6 py-4 border-t border-gray-100">
+              <div class="flex space-x-3">
+                <!-- Join Meeting Button -->
                 <button
                   v-if="canShowMeetingButton(booking)"
                   @click="handleMeetingAction(booking)"
-                  :class="getMeetingButtonClass(booking) + ' w-full'"
-                  :disabled="!isMeetingAvailable(booking) && !isTestModeActiveForBooking(booking)"
+                  :class="getMeetingButtonClass(booking)"
+                  :disabled="!isMeetingAvailable(booking)"
                 >
                   {{ getMeetingButtonText(booking) }}
+                </button>
+                
+                <button
+                  v-if="(booking.status || booking.booking_status) === 'pending' || (booking.status || booking.booking_status) === 'confirmed'"
+                  @click="cancelBooking(booking.id || booking.booking_id)"
+                  class="btn-danger"
+                >
+                  Cancel Booking
+                </button>
+                <button
+                  v-if="(booking.status || booking.booking_status) === 'confirmed'"
+                  @click="openRescheduleModal(booking)"
+                  class="btn-secondary"
+                >
+                  Reschedule
                 </button>
               </div>
             </div>
@@ -239,35 +222,32 @@
         <!-- Profile Tab -->
         <div v-show="activeTab === 'profile'" class="p-6">
           <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-medium text-gray-900">{{ __('profile_settings') }}</h3>
+            <h3 class="text-lg font-medium text-gray-900">Profile Settings</h3>
             <button @click="openProfileModal" class="btn-primary">
-              <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-              </svg>
-              {{ __('edit_profile') }}
+              Edit Profile
             </button>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label class="form-label">{{ __('first_name') }}</label>
-              <p class="text-gray-700">{{ profile.first_name || __('not_set') }}</p>
+              <label class="form-label">First Name</label>
+              <p class="text-gray-700">{{ profile.first_name || 'Not set' }}</p>
             </div>
             <div>
-              <label class="form-label">{{ __('last_name') }}</label>
-              <p class="text-gray-700">{{ profile.last_name || __('not_set') }}</p>
+              <label class="form-label">Last Name</label>
+              <p class="text-gray-700">{{ profile.last_name || 'Not set' }}</p>
             </div>
             <div>
-              <label class="form-label">{{ __('email') }}</label>
-              <p class="text-gray-700">{{ profile.email || __('not_set') }}</p>
+              <label class="form-label">Email</label>
+              <p class="text-gray-700">{{ profile.email || 'Not set' }}</p>
             </div>
             <div>
-              <label class="form-label">{{ __('phone') }}</label>
-              <p class="text-gray-700">{{ profile.phone || __('not_set') }}</p>
+              <label class="form-label">Phone</label>
+              <p class="text-gray-700">{{ profile.phone || 'Not set' }}</p>
             </div>
             <div class="md:col-span-2">
-              <label class="form-label">{{ __('bio') }}</label>
-              <p class="text-gray-700">{{ profile.bio || __('not_set') }}</p>
+              <label class="form-label">Timezone</label>
+              <p class="text-gray-700">{{ profile.timezone || 'Not set' }}</p>
             </div>
           </div>
         </div>
@@ -282,24 +262,28 @@
       @save="updateProfile"
     />
 
-
+    <!-- Reschedule Modal -->
+    <RescheduleModal
+      v-if="showRescheduleModal"
+      :booking="selectedBooking"
+      @close="showRescheduleModal = false"
+      @save="rescheduleBooking"
+    />
   </div>
 </template>
 
 <script>
-import { inject, onMounted, reactive, ref, watch } from 'vue'
+import { ref, reactive, onMounted, watch, inject } from 'vue'
 import { attendeeAPI } from '../utils/api.js'
-import { isTestModeActiveForBooking } from '../utils/constants.js'
-import { formatDateTime, getStatusClass, getStatusText, handleApiError } from '../utils/helpers.js'
-import { __ } from '../utils/i18n.js'
-import CountdownTimer from './CountdownTimer.vue'
+import { formatDateTime, getStatusClass, getStatusText, handleApiError, copyToClipboard } from '../utils/helpers.js'
 import ProfileModal from './modals/ProfileModal.vue'
+import RescheduleModal from './modals/RescheduleModal.vue'
 
 export default {
   name: 'AttendeeDashboard',
   components: {
     ProfileModal,
-    CountdownTimer
+    RescheduleModal
   },
   setup() {
     // Inject toast notification system
@@ -318,24 +302,24 @@ export default {
       type: '',
       message: ''
     })
-    const logoutUrl = ref(window.hbcAttendeeData?.logoutUrl || '/wp-login.php?action=logout')
-    const buttonStateRefresh = ref(0) // Trigger for button state updates
 
     // Modal states
     const showProfileModal = ref(false)
+    const showRescheduleModal = ref(false)
+    const selectedBooking = ref(null)
     const loadingMeetingLinks = ref(new Set())
 
     // Tab configuration
     const tabs = [
-      { id: 'bookings', name: __('my_bookings_tab') },
-      { id: 'profile', name: __('profile_tab') }
+      { id: 'bookings', name: 'My Bookings' },
+      { id: 'profile', name: 'Profile' }
     ]
 
     // Booking filter configuration
     const bookingFilters = [
-      { id: 'upcoming', name: __('upcoming_filter') },
-      { id: 'completed', name: __('completed_filter') },
-      { id: 'cancelled', name: __('cancelled_filter') }
+      { id: 'upcoming', name: 'Upcoming' },
+      { id: 'completed', name: 'Completed' },
+      { id: 'cancelled', name: 'Cancelled' }
     ]
 
     // Methods
@@ -365,8 +349,6 @@ export default {
         // Get all bookings first
         const data = await attendeeAPI.getBookings('all')
         let allBookings = data.bookings || []
-        
-        // Process booking data from API
         
         // Get today's date for filtering
         const today = new Date().toISOString().split('T')[0]
@@ -410,26 +392,19 @@ export default {
     const loadProfile = async () => {
       try {
         const data = await attendeeAPI.getProfile()
-        // Process profile data from API
         
-        console.log('Profile:', data);
-
         if (data) {
           // Map the profile data correctly from WordPress user data
           Object.assign(profile, {
             first_name: data.first_name || '',
             last_name: data.last_name || '',
-            email: data.email || data.user_email || '',
-            display_name: data.name || data.display_name || '',
+            email: data.email || '',
+            display_name: data.name || '',
             phone: data.phone || '',
-            bio: data.bio || data.description || '',
             timezone: data.timezone || ''
           })
           
-          // Profile data assigned successfully
         }
-
-        
       } catch (error) {
         console.error('Failed to load profile:', error)
         showAlert('error', handleApiError(error))
@@ -478,7 +453,21 @@ export default {
       }
     }
 
+    const cancelBooking = async (bookingId) => {
+      if (!confirm('Are you sure you want to cancel this booking?')) return
 
+      try {
+        isLoading.value = true
+        await attendeeAPI.cancelBooking(bookingId)
+        showAlert('success', 'Booking cancelled successfully')
+        await loadBookings()
+        await loadStats()
+      } catch (error) {
+        showAlert('error', handleApiError(error))
+      } finally {
+        isLoading.value = false
+      }
+    }
 
     const openProfileModal = () => {
       showProfileModal.value = true
@@ -498,7 +487,28 @@ export default {
       }
     }
 
+    const openRescheduleModal = (booking) => {
+      selectedBooking.value = booking
+      showRescheduleModal.value = true
+    }
 
+    const rescheduleBooking = async (rescheduleData) => {
+      try {
+        isLoading.value = true
+        await attendeeAPI.rescheduleBooking(
+          rescheduleData.bookingId,
+          rescheduleData.newDate,
+          rescheduleData.newTime
+        )
+        showRescheduleModal.value = false
+        showAlert('success', 'Booking rescheduled successfully')
+        await loadBookings()
+      } catch (error) {
+        showAlert('error', handleApiError(error))
+      } finally {
+        isLoading.value = false
+      }
+    }
 
     // Meeting link functionality
     const hasJoinLink = (locationData) => {
@@ -534,25 +544,17 @@ export default {
     }
 
     const canShowMeetingButton = (booking) => {
-      // In test mode, always show meeting button for confirmed bookings
-      if (isTestModeActiveForBooking(booking)) {
-        return booking.status === 'confirmed' || booking.booking_status === 'confirmed'
-      }
-      
       // Show meeting button for confirmed bookings that have meeting data
       return (booking.status === 'confirmed' || booking.booking_status === 'confirmed') && 
              (hasJoinLink(booking.meeting_locations) || booking.meeting_id)
     }
 
     const isMeetingAvailable = (booking) => {
-      // Force reactivity by accessing the refresh trigger
-      buttonStateRefresh.value
+      // TESTING MODE: Always return true to bypass time restrictions
+      // This allows immediate access to meeting links regardless of scheduled time
+      return true
       
-      // Check if test mode is active using centralized constant
-      if (isTestModeActiveForBooking(booking)) {
-        return true
-      }
-      
+      /* Original time-based logic (commented out for testing):
       const now = new Date()
       const meetingDateTime = new Date(booking.meeting_dates + ' ' + booking.start_time)
       const meetingEndTime = new Date(booking.meeting_dates + ' ' + booking.end_time)
@@ -560,16 +562,16 @@ export default {
       // Meeting is available 5 minutes before start time until end time
       const fiveMinutesBefore = new Date(meetingDateTime.getTime() - 5 * 60 * 1000)
       
-      const timeBasedAvailable = now >= fiveMinutesBefore && now <= meetingEndTime
-      return timeBasedAvailable
+      return now >= fiveMinutesBefore && now <= meetingEndTime
+      */
     }
 
     const getMeetingButtonClass = (booking) => {
-      // If testing mode is enabled, always show active button
-      if (isTestModeActiveForBooking(booking)) {
-        return 'btn-success animate-pulse'
-      }
+      // TESTING MODE: Always return active button class to bypass time restrictions
+      // This ensures buttons are always enabled and accessible
+      return 'btn-success animate-pulse' // Always show as active/live
       
+      /* Original time-based logic (commented out for testing):
       if (!isMeetingAvailable(booking)) {
         return 'btn-secondary opacity-50 cursor-not-allowed'
       }
@@ -583,30 +585,15 @@ export default {
       } else {
         return 'btn-primary' // Meeting available soon
       }
+      */
     }
 
     const getMeetingButtonText = (booking) => {
-      // If testing mode is enabled, always show Start Meeting
-      if (isTestModeActiveForBooking(booking)) {
-        return __('start_meeting_btn')
-      }
-      
-      const meetingAvailable = isMeetingAvailable(booking)
-      
-      if (!meetingAvailable) {
-        return __('scheduled_status')
-      }
-      
       const now = new Date()
       const meetingDateTime = new Date(booking.meeting_dates + ' ' + booking.start_time)
       const meetingEndTime = new Date(booking.meeting_dates + ' ' + booking.end_time)
       
-      if (now >= meetingDateTime && now <= meetingEndTime) {
-        return __('start_meeting_btn')
-      } else {
-        const minutesUntil = Math.ceil((meetingDateTime.getTime() - now.getTime()) / (1000 * 60))
-        return `${__('available_in')} ${minutesUntil}${__('min')}`
-      }
+      return 'Join Meeting'
     }
 
     const handleMeetingAction = async (booking) => {
@@ -620,25 +607,10 @@ export default {
         // Try to get meeting link from API
         const response = await attendeeAPI.getMeetingLink(booking.id || booking.booking_id)
         
-        console.log('API Response:', response)
-        console.log('Response status:', response.status)
-        console.log('Response meeting_url:', response.meeting_url)
-        
         if (response.status && response.meeting_url) {
-          // Clean the meeting URL by removing extra quotes and whitespace
-          let cleanUrl = response.meeting_url.toString().trim()
-          if (cleanUrl.startsWith('"') && cleanUrl.endsWith('"')) {
-            cleanUrl = cleanUrl.slice(1, -1)
-          }
-          if (cleanUrl.startsWith("'") && cleanUrl.endsWith("'")) {
-            cleanUrl = cleanUrl.slice(1, -1)
-          }
-          
-          console.log('Cleaned URL:', cleanUrl)
-          console.log('About to navigate to:', cleanUrl)
-          
-          // Navigate directly to the meeting URL in the same tab
-          window.location.href = cleanUrl
+          // Open meeting in new tab
+          window.open(response.meeting_url, '_blank', 'noopener,noreferrer')
+          showAlert('success', 'Meeting opened in new tab')
         } else {
           // Fallback to existing join link if available
           const fallbackLink = getJoinLink(booking.meeting_locations)
@@ -646,22 +618,12 @@ export default {
             window.open(fallbackLink, '_blank', 'noopener,noreferrer')
             showAlert('success', 'Meeting opened in new tab')
           } else {
-            // In test mode, show a different message but still allow access
-            if (isTestModeActiveForBooking(booking)) {
-              showAlert('info', 'Test mode: Meeting link would be available here in production.')
-            } else {
-              showAlert('error', 'Meeting link not available. Please contact support.')
-            }
+            showAlert('error', 'Meeting link not available. Please contact support.')
           }
         }
       } catch (error) {
         console.error('Error getting meeting link:', error)
-        // In test mode, show a more informative message
-        if (isTestModeActiveForBooking(booking)) {
-          showAlert('info', 'Test mode: Meeting access would be available here in production.')
-        } else {
-          showAlert('error', 'Failed to get meeting link. Please try again.')
-        }
+        showAlert('error', 'Failed to get meeting link. Please try again.')
       } finally {
         loadingMeetingLinks.value.delete(booking.id || booking.booking_id)
       }
@@ -690,66 +652,6 @@ export default {
       }
     })
 
-    // Handle logout
-    const handleLogout = async () => {
-      if (confirm('Are you sure you want to logout?')) {
-        try {
-          const response = await fetch(window.hbcAttendeeData.ajaxUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `action=hbc_logout&nonce=${window.hbcAttendeeData.logoutNonce}`
-          })
-          
-          const data = await response.json()
-          
-          if (data.success) {
-            window.location.href = data.data.login_url
-          } else {
-            showAlert('error', 'Logout failed. Please try again.')
-          }
-        } catch (error) {
-          console.error('Error:', error)
-          showAlert('error', 'Logout failed. Please try again.')
-        }
-      }
-    }
-
-    // Countdown Timer Methods
-    const isUpcomingMeeting = (booking) => {
-      const now = new Date()
-      const meetingDateTime = new Date(booking.meeting_dates + ' ' + booking.start_time)
-      return meetingDateTime > now
-    }
-
-    const onMeetingExpired = (booking) => {
-      console.log('Meeting expired:', booking)
-      
-      // Force button state refresh by incrementing the trigger
-      buttonStateRefresh.value++
-      
-      // Find the booking in our array and update it to trigger reactivity
-      const bookingIndex = bookings.value.findIndex(b => b.id === booking.id)
-      if (bookingIndex !== -1) {
-        // Update the booking object to trigger Vue's reactivity
-        bookings.value[bookingIndex] = { ...bookings.value[bookingIndex] }
-      }
-      
-      // Also reload bookings to ensure data consistency
-      loadBookings()
-    }
-
-    const onMeetingUrgent = (booking, timeRemaining) => {
-      console.log('Meeting starting soon:', booking, timeRemaining)
-      // Could show additional notifications or update UI
-    }
-
-    const onMeetingWarning = (booking, timeRemaining) => {
-      console.log('Meeting approaching:', booking, timeRemaining)
-      // Could show warning notifications
-    }
-
     onMounted(init)
 
     return {
@@ -762,17 +664,20 @@ export default {
       stats,
       alert,
       showProfileModal,
+      showRescheduleModal,
+      selectedBooking,
       tabs,
       bookingFilters,
-      logoutUrl,
 
       // Methods
       showAlert,
       clearAlert,
       loadBookings,
+      cancelBooking,
       openProfileModal,
       updateProfile,
-      handleLogout,
+      openRescheduleModal,
+      rescheduleBooking,
       hasJoinLink,
       getJoinLink,
       canShowMeetingButton,
@@ -780,17 +685,11 @@ export default {
       getMeetingButtonClass,
       getMeetingButtonText,
       handleMeetingAction,
-      isTestModeActiveForBooking,
-      isUpcomingMeeting,
-      onMeetingExpired,
-      onMeetingUrgent,
-      onMeetingWarning,
 
       // Utilities
       formatDateTime,
       getStatusClass,
-      getStatusText,
-      __
+      getStatusText
     }
   }
 }

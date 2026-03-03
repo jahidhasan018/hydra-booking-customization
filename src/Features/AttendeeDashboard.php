@@ -7,7 +7,7 @@
 
 namespace HydraBookingCustomization\Features;
 
-use HydraBookingCustomization\Core\AccessControl;
+use HydraBookingCustomization\Core\CacheManager;
 
 /**
  * Attendee Dashboard Feature Class
@@ -29,7 +29,8 @@ class AttendeeDashboard {
 		// add_shortcode( 'hbc_attendee_dashboard', array( $this, 'render_dashboard_shortcode' ) );
 		add_action( 'wp_ajax_hbc_get_attendee_bookings', array( $this, 'ajax_get_attendee_bookings' ) );
 		add_action( 'wp_ajax_hbc_get_attendee_stats', array( $this, 'ajax_get_attendee_stats' ) );
-
+		add_action( 'wp_ajax_hbc_cancel_booking', array( $this, 'ajax_cancel_booking' ) );
+		add_action( 'wp_ajax_hbc_reschedule_booking', array( $this, 'ajax_reschedule_booking' ) );
 		add_action( 'wp_ajax_hbc_update_profile', array( $this, 'ajax_update_profile' ) );
 		add_action( 'wp_ajax_hbc_change_password', array( $this, 'ajax_change_password' ) );
 
@@ -90,15 +91,8 @@ class AttendeeDashboard {
 		?>
 		<div id="hbc-attendee-dashboard" class="hbc-dashboard">
 			<div class="hbc-dashboard-header">
-				<div class="hbc-header-content">
-					<div class="hbc-header-text">
-						<h2><?php printf( __( 'Welcome, %s!', 'hydra-booking-customization' ), esc_html( $user->display_name ) ); ?></h2>
-						<p><?php _e( 'Manage your bookings and profile from this dashboard.', 'hydra-booking-customization' ); ?></p>
-					</div>
-					<div class="hbc-header-actions">
-						<button type="button" class="hbc-logout-btn button" onclick="hbcLogout()"><?php _e( 'Logout', 'hydra-booking-customization' ); ?></button>
-					</div>
-				</div>
+				<h2><?php printf( __( 'Welcome, %s!', 'hydra-booking-customization' ), esc_html( $user->display_name ) ); ?></h2>
+				<p><?php _e( 'Manage your bookings and profile from this dashboard.', 'hydra-booking-customization' ); ?></p>
 			</div>
 
 			<div class="hbc-dashboard-nav">
@@ -123,32 +117,6 @@ class AttendeeDashboard {
 				</div>
 			</div>
 		</div>
-		
-		<script>
-		function hbcLogout() {
-			if (confirm('<?php _e( 'Are you sure you want to logout?', 'hydra-booking-customization' ); ?>')) {
-				fetch('<?php echo admin_url( 'admin-ajax.php' ); ?>', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/x-www-form-urlencoded',
-					},
-					body: 'action=hbc_logout&nonce=<?php echo wp_create_nonce( 'hbc_logout_nonce' ); ?>'
-				})
-				.then(response => response.json())
-				.then(data => {
-					if (data.success) {
-						window.location.href = data.data.login_url;
-					} else {
-						alert('<?php _e( 'Logout failed. Please try again.', 'hydra-booking-customization' ); ?>');
-					}
-				})
-				.catch(error => {
-					console.error('Error:', error);
-					alert('<?php _e( 'Logout failed. Please try again.', 'hydra-booking-customization' ); ?>');
-				});
-			}
-		}
-		</script>
 		<?php
 	}
 
@@ -206,7 +174,17 @@ class AttendeeDashboard {
 								do_action( 'hbc_booking_actions_before', $booking );
 								?>
 								
-
+								<?php if ( $this->can_cancel_booking( $booking ) ) : ?>
+									<button class="button hbc-cancel-booking" data-booking-id="<?php echo esc_attr( $booking->booking_id ); ?>">
+										<?php _e( 'Cancel', 'hydra-booking-customization' ); ?>
+									</button>
+								<?php endif; ?>
+								
+								<?php if ( $this->can_reschedule_booking( $booking ) ) : ?>
+									<button class="button hbc-reschedule-booking" data-booking-id="<?php echo esc_attr( $booking->booking_id ); ?>">
+										<?php _e( 'Reschedule', 'hydra-booking-customization' ); ?>
+									</button>
+								<?php endif; ?>
 								
 								<?php 
 								// Allow other plugins to add custom actions after default actions
@@ -339,13 +317,31 @@ class AttendeeDashboard {
 	}
 
 	/**
-	 * Get user bookings.
+	 * Get user bookings (cached).
 	 *
+	 * @since 1.0.0
 	 * @param int    $user_id User ID.
 	 * @param string $type    Booking type (upcoming, past, all).
 	 * @return array
 	 */
 	private function get_user_bookings( $user_id, $type = 'all' ) {
+		$user_id   = absint( $user_id );
+		$cache_key = 'attendee_bookings_' . $user_id . '_' . sanitize_key( $type );
+
+		return CacheManager::remember( $cache_key, CacheManager::TTLS['bookings'], function () use ( $user_id, $type ) {
+			return $this->fetch_user_bookings( $user_id, $type );
+		} );
+	}
+
+	/**
+	 * Fetch user bookings from the database (uncached).
+	 *
+	 * @since 1.1.0
+	 * @param int    $user_id User ID.
+	 * @param string $type    Booking type (upcoming, past, all).
+	 * @return array
+	 */
+	private function fetch_user_bookings( $user_id, $type = 'all' ) {
 		global $wpdb;
 		
 		$attendees_table = $wpdb->prefix . 'tfhb_attendees';
@@ -355,9 +351,6 @@ class AttendeeDashboard {
 		
 		$current_time = current_time( 'mysql' );
 		
-		// Get testing mode setting and ensure it's a boolean
-		$testing_mode = ( HBC_TEST_MODE_STATUS === 'active' );
-
 		// Build the base query with proper joins and validation
 		$query = "
 			SELECT 
@@ -419,30 +412,73 @@ class AttendeeDashboard {
 		
 		$query .= " {$order_by}";
 		
-		$results = $wpdb->get_results( $wpdb->prepare( $query, $query_params ) );
-		
-		// Add testing mode information to each booking
-		foreach ( $results as $booking ) {
-			$booking->testing_mode = $testing_mode;
-		}
-		
-		return $results;
+		return $wpdb->get_results( $wpdb->prepare( $query, $query_params ) );
 	}
 
+	/**
+	 * Check if booking can be cancelled.
+	 *
+	 * @param object $booking Booking object.
+	 * @return bool
+	 */
+	private function can_cancel_booking( $booking ) {
+		// Allow cancellation if booking is at least 24 hours away.
+		$booking_datetime = $booking->meeting_dates . ' ' . $booking->start_time;
+		$booking_time = strtotime( $booking_datetime );
+		$current_time = current_time( 'timestamp' );
+		$hours_until_booking = ( $booking_time - $current_time ) / 3600;
+		
+		$status = $booking->attendee_status ?? $booking->booking_status ?? '';
+		return $hours_until_booking >= 24 && in_array( $status, array( 'confirmed', 'pending' ), true );
+	}
 
+	/**
+	 * Check if booking can be rescheduled.
+	 *
+	 * @param object $booking Booking object.
+	 * @return bool
+	 */
+	private function can_reschedule_booking( $booking ) {
+		// Allow rescheduling if booking is at least 48 hours away.
+		$booking_datetime = $booking->meeting_dates . ' ' . $booking->start_time;
+		$booking_time = strtotime( $booking_datetime );
+		$current_time = current_time( 'timestamp' );
+		$hours_until_booking = ( $booking_time - $current_time ) / 3600;
+		
+		$status = $booking->attendee_status ?? $booking->booking_status ?? '';
+		return $hours_until_booking >= 48 && in_array( $status, array( 'confirmed', 'pending' ), true );
+	}
 
+	/**
+	 * Validate an attendee AJAX request.
+	 *
+	 * Consolidates repeated nonce and login checks common to all
+	 * attendee dashboard AJAX handlers.
+	 *
+	 * @since 1.1.0
+	 * @param string $nonce_action Nonce action name. Default 'hbc_ajax_nonce'.
+	 * @param string $nonce_field  POST field name for nonce. Default 'nonce'.
+	 * @return int|false User ID on success, false on failure (response already sent).
+	 */
+	private function validate_attendee_ajax_request( $nonce_action = 'hbc_ajax_nonce', $nonce_field = 'nonce' ) {
+		check_ajax_referer( $nonce_action, $nonce_field );
 
+		if ( ! is_user_logged_in() ) {
+			wp_send_json_error( __( 'User not logged in.', 'hydra-booking-customization' ) );
+			return false;
+		}
+
+		return get_current_user_id();
+	}
 
 	/**
 	 * AJAX handler to get attendee bookings.
 	 */
 	public function ajax_get_attendee_bookings() {
-		check_ajax_referer( 'hbc_ajax_nonce', 'nonce' );
-		
-		// Verify attendee access
-		AccessControl::verify_attendee_ajax_access();
-		
-		$user_id = get_current_user_id();
+		$user_id = $this->validate_attendee_ajax_request();
+		if ( ! $user_id ) {
+			return;
+		}
 		$type = sanitize_text_field( $_POST['type'] ?? 'all' );
 		
 		$bookings = $this->get_user_bookings( $user_id, $type );
@@ -450,53 +486,160 @@ class AttendeeDashboard {
 		wp_send_json_success( $bookings );
 	}
 
+	/**
+	 * AJAX handler to cancel booking.
+	 */
+	public function ajax_cancel_booking() {
+		$user_id = $this->validate_attendee_ajax_request();
+		if ( ! $user_id ) {
+			return;
+		}
+		
+		$booking_id = intval( $_POST['booking_id'] ?? 0 );
 
+		if ( ! $booking_id ) {
+			wp_send_json_error( __( 'Invalid booking ID', 'hydra-booking-customization' ) );
+		}
+		
+		// Verify booking belongs to user.
+		global $wpdb;
+		$attendees_table = $wpdb->prefix . 'tfhb_attendees';
+		$bookings_table = $wpdb->prefix . 'tfhb_bookings';
+		
+		$booking = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT b.*, a.id as attendee_id 
+				FROM {$bookings_table} b 
+				INNER JOIN {$attendees_table} a ON b.id = a.booking_id 
+				WHERE b.id = %d AND a.user_id = %d",
+				$booking_id,
+				$user_id
+			)
+		);
+		
+		if ( ! $booking ) {
+			wp_send_json_error( __( 'Booking not found', 'hydra-booking-customization' ) );
+		}
+		
+		if ( ! $this->can_cancel_booking( $booking ) ) {
+			wp_send_json_error( __( 'This booking cannot be cancelled', 'hydra-booking-customization' ) );
+		}
+		
+		// Update booking status.
+		$updated = $wpdb->update(
+			$bookings_table,
+			array( 'status' => 'cancelled' ),
+			array( 'id' => $booking_id ),
+			array( '%s' ),
+			array( '%d' )
+		);
+		
+		if ( $updated !== false ) {
+			// Invalidate caches.
+			CacheManager::invalidate_attendee( $user_id );
 
+			// Send cancellation notification.
+			do_action( 'hbc_booking_cancelled', $booking_id, $user_id );
+			
+			wp_send_json_success( __( 'Booking cancelled successfully', 'hydra-booking-customization' ) );
+		} else {
+			wp_send_json_error( __( 'Failed to cancel booking', 'hydra-booking-customization' ) );
+		}
+	}
 
+	/**
+	 * AJAX handler to reschedule booking.
+	 */
+	public function ajax_reschedule_booking() {
+		$user_id = $this->validate_attendee_ajax_request();
+		if ( ! $user_id ) {
+			return;
+		}
+		
+		$booking_id = intval( $_POST['booking_id'] ?? 0 );
+		$new_date = sanitize_text_field( $_POST['new_date'] ?? '' );
+		$new_time = sanitize_text_field( $_POST['new_time'] ?? '' );
+		$user_id = get_current_user_id();
+		
+		if ( ! $booking_id || ! $new_date || ! $new_time ) {
+			wp_send_json_error( __( 'Missing required fields', 'hydra-booking-customization' ) );
+		}
+		
+		// Verify booking belongs to user.
+		global $wpdb;
+		$attendees_table = $wpdb->prefix . 'tfhb_attendees';
+		$bookings_table = $wpdb->prefix . 'tfhb_bookings';
+		
+		$booking = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT b.*, a.id as attendee_id 
+				FROM {$bookings_table} b 
+				INNER JOIN {$attendees_table} a ON b.id = a.booking_id 
+				WHERE b.id = %d AND a.user_id = %d",
+				$booking_id,
+				$user_id
+			)
+		);
+		
+		if ( ! $booking ) {
+			wp_send_json_error( __( 'Booking not found', 'hydra-booking-customization' ) );
+		}
+		
+		if ( ! $this->can_reschedule_booking( $booking ) ) {
+			wp_send_json_error( __( 'This booking cannot be rescheduled', 'hydra-booking-customization' ) );
+		}
+		
+		// Update booking date and time.
+		$updated = $wpdb->update(
+			$bookings_table,
+			array( 
+				'meeting_dates' => $new_date,
+				'start_time' => $new_time,
+				'status' => 'pending' // Reset to pending for host approval
+			),
+			array( 'id' => $booking_id ),
+			array( '%s', '%s', '%s' ),
+			array( '%d' )
+		);
+		
+		if ( $updated !== false ) {
+			// Invalidate caches.
+			CacheManager::invalidate_attendee( $user_id );
+
+			// Send reschedule notification.
+			do_action( 'hbc_booking_rescheduled', $booking_id, $user_id, $new_date, $new_time );
+			
+			wp_send_json_success( __( 'Booking rescheduled successfully. Awaiting host approval.', 'hydra-booking-customization' ) );
+		} else {
+			wp_send_json_error( __( 'Failed to reschedule booking', 'hydra-booking-customization' ) );
+		}
+	}
 
 	/**
 	 * AJAX handler to update profile.
 	 */
 	public function ajax_update_profile() {
-		check_ajax_referer( 'hbc_update_profile', 'hbc_profile_nonce' );
-		
-		// Verify attendee access
-		AccessControl::verify_attendee_ajax_access();
-		
-		$user_id = get_current_user_id();
+		$user_id = $this->validate_attendee_ajax_request( 'hbc_update_profile', 'hbc_profile_nonce' );
+		if ( ! $user_id ) {
+			return;
+		}
 		
 		$user_data = array(
             'ID'          => $user_id,
             'first_name'  => sanitize_text_field( $_POST['first_name'] ?? '' ),
             'last_name'   => sanitize_text_field( $_POST['last_name'] ?? '' ),
             'user_email'  => sanitize_email( $_POST['email'] ?? $_POST['user_email'] ?? '' ),
-            'description' => sanitize_textarea_field( $_POST['bio'] ?? $_POST['description'] ?? '' ),
+            'description' => sanitize_textarea_field( $_POST['description'] ?? '' ),
         );
-        
-        // Handle phone number as user meta
-        $phone = sanitize_text_field( $_POST['phone'] ?? '' );
-        update_user_meta( $user_id, 'billing_phone', $phone );
-        
-        // Handle password change if provided
-        if ( !empty( $_POST['new_password'] ) && !empty( $_POST['current_password'] ) ) {
-            $current_password = sanitize_text_field( $_POST['current_password'] );
-            $new_password = sanitize_text_field( $_POST['new_password'] );
-            
-            // Verify current password
-            $user = get_user_by( 'id', $user_id );
-            if ( wp_check_password( $current_password, $user->user_pass, $user_id ) ) {
-                wp_set_password( $new_password, $user_id );
-            } else {
-                wp_send_json_error( __( 'Current password is incorrect', 'hydra-booking-customization' ) );
-                return;
-            }
-        }
 		
 		$updated = wp_update_user( $user_data );
 		
 		if ( is_wp_error( $updated ) ) {
 			wp_send_json_error( $updated->get_error_message() );
 		} else {
+			// Invalidate caches.
+			CacheManager::invalidate_attendee( $user_id );
+
 			wp_send_json_success( __( 'Profile updated successfully', 'hydra-booking-customization' ) );
 		}
 	}
@@ -505,12 +648,10 @@ class AttendeeDashboard {
 	 * AJAX handler to change password.
 	 */
 	public function ajax_change_password() {
-		check_ajax_referer( 'hbc_change_password', 'hbc_password_nonce' );
-		
-		// Verify attendee access
-		AccessControl::verify_attendee_ajax_access();
-		
-		$user_id = get_current_user_id();
+		$user_id = $this->validate_attendee_ajax_request( 'hbc_change_password', 'hbc_password_nonce' );
+		if ( ! $user_id ) {
+			return;
+		}
 		$current_password = sanitize_text_field( $_POST['current_password'] ?? '' );
 		$new_password = sanitize_text_field( $_POST['new_password'] ?? '' );
 		$confirm_password = sanitize_text_field( $_POST['confirm_password'] ?? '' );
@@ -561,12 +702,28 @@ class AttendeeDashboard {
 	}
 
 	/**
-	 * Get attendee statistics.
+	 * Get attendee statistics (cached).
 	 *
+	 * @since 1.0.0
 	 * @param int $user_id User ID.
 	 * @return array
 	 */
 	private function get_attendee_stats( $user_id ) {
+		$user_id = absint( $user_id );
+
+		return CacheManager::remember( 'attendee_stats_' . $user_id, CacheManager::TTLS['stats'], function () use ( $user_id ) {
+			return $this->compute_attendee_stats( $user_id );
+		} );
+	}
+
+	/**
+	 * Compute attendee statistics from the database (uncached).
+	 *
+	 * @since 1.1.0
+	 * @param int $user_id User ID.
+	 * @return array
+	 */
+	private function compute_attendee_stats( $user_id ) {
 		global $wpdb;
 		
 		$attendees_table = $wpdb->prefix . 'tfhb_attendees';
@@ -659,12 +816,10 @@ class AttendeeDashboard {
 	 * AJAX: Get attendee stats.
 	 */
 	public function ajax_get_attendee_stats() {
-		check_ajax_referer( 'hbc_ajax_nonce', 'nonce' );
-		
-		// Verify attendee access
-		AccessControl::verify_attendee_ajax_access();
-		
-		$user_id = get_current_user_id();
+		$user_id = $this->validate_attendee_ajax_request();
+		if ( ! $user_id ) {
+			return;
+		}
 		$stats = $this->get_attendee_stats( $user_id );
 		
 		wp_send_json_success( $stats );

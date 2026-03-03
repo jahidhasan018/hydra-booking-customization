@@ -23,11 +23,8 @@ class AutoRegistration {
 	 * Initialize hooks.
 	 */
 	private function init_hooks() {
-		// Debug: Log that auto-registration is initialized.
-		error_log( 'HBC AutoRegistration: Initialized with hooks' );
-		
-		// Ensure user_id column exists in attendees table
-		$this->ensure_user_id_column();
+		// Ensure user_id column exists in attendees table (only checks once, cached via transient).
+		$this->maybe_ensure_user_id_column();
 		
 		// Hook into Hydra Booking after booking confirmation (correct hook name).
 		add_action( 'hydra_booking/after_booking_confirmed', array( $this, 'auto_create_attendee_account' ), 10, 1 );
@@ -35,9 +32,6 @@ class AutoRegistration {
 		// Hook into AJAX form submission for testing.
 		add_action( 'wp_ajax_nopriv_tfhb_meeting_form_submit', array( $this, 'intercept_booking_confirmation' ), 15 );
 		add_action( 'wp_ajax_tfhb_meeting_form_submit', array( $this, 'intercept_booking_confirmation' ), 15 );
-		
-		// Handle redirect after auto-registration.
-		add_action( 'wp_loaded', array( $this, 'handle_post_registration_redirect' ) );
 	}
 
 	/**
@@ -83,14 +77,10 @@ class AutoRegistration {
 		if ( email_exists( $attendee_email ) ) {
 			error_log( 'HBC AutoRegistration: User already exists with email: ' . $attendee_email );
 			
-			// Get existing user and attach booking to their account
+			// Update existing user with attendee ID if not already set.
 			$existing_user = get_user_by( 'email', $attendee_email );
 			if ( $existing_user && isset( $attendee_booking->id ) ) {
 				$this->update_attendee_user_id( $attendee_booking->id, $existing_user->ID );
-				
-				// Auto-login existing user and redirect to checkout
-				$this->auto_login_user( $existing_user->ID );
-				$this->redirect_to_checkout();
 			}
 			return;
 		}
@@ -104,16 +94,10 @@ class AutoRegistration {
 				$this->update_attendee_user_id( $attendee_booking->id, $user_id );
 			}
 
-			// Auto-login the newly created user
-			$this->auto_login_user( $user_id );
-
-			// Send welcome email with enhanced content.
+			// Send welcome email.
 			if ( get_option( 'hbc_send_welcome_email', true ) ) {
-				$this->send_enhanced_welcome_email( $user_id, $attendee_booking );
+				$this->send_welcome_email( $user_id, $attendee_booking );
 			}
-
-			// Redirect to checkout page after successful registration
-			$this->redirect_to_checkout();
 
 			// Fire action for other plugins to hook into.
 			do_action( 'hbc_after_auto_registration', $user_id, $attendee_booking );
@@ -152,20 +136,14 @@ class AutoRegistration {
 
 		$attendee_email = sanitize_email( $booking_data['attendee_email'] );
 		
-		// Validate email format
 		if ( ! is_email( $attendee_email ) ) {
-			error_log( 'HBC AutoRegistration: Invalid email format: ' . $attendee_email );
 			return;
 		}
 
 		// Check if user already exists.
 		$existing_user = get_user_by( 'email', $attendee_email );
 		if ( $existing_user ) {
-			error_log( 'HBC AutoRegistration: User already exists, auto-logging in and redirecting to checkout' );
-			
-			// Auto-login existing user and redirect to checkout
-			$this->auto_login_user( $existing_user->ID );
-			$this->redirect_to_checkout();
+			error_log( 'HBC AutoRegistration: User already exists, skipping registration' );
 			return;
 		}
 
@@ -176,22 +154,16 @@ class AutoRegistration {
 		$user_id = $this->create_attendee_user( $attendee_email, $attendee_name );
 		
 		if ( $user_id && ! is_wp_error( $user_id ) ) {
-			// Auto-login the newly created user
-			$this->auto_login_user( $user_id );
-			
 			// Create a mock attendee booking object for the welcome email.
 			$mock_attendee_booking = (object) array(
 				'email' => $attendee_email,
 				'attendee_name'  => $attendee_name,
 			);
 			
-			// Send enhanced welcome email.
+			// Send welcome email.
 			if ( get_option( 'hbc_send_welcome_email', true ) ) {
-				$this->send_enhanced_welcome_email( $user_id, $mock_attendee_booking );
+				$this->send_welcome_email( $user_id, $mock_attendee_booking );
 			}
-			
-			// Redirect to checkout page after successful registration
-			$this->redirect_to_checkout();
 		}
 	}
 
@@ -260,13 +232,10 @@ class AutoRegistration {
 		$user_id = wp_insert_user( $user_data );
 		
 		if ( ! is_wp_error( $user_id ) ) {
-			// Store the generated password for welcome email (using temporary meta key).
-			update_user_meta( $user_id, '_hbc_temp_password', $password );
+			// Store the generated password for welcome email.
+			update_user_meta( $user_id, 'hbc_generated_password', $password );
 			update_user_meta( $user_id, 'hbc_auto_registered', true );
 			update_user_meta( $user_id, 'hbc_registration_date', current_time( 'mysql' ) );
-			
-			// Log successful user creation with security details
-			error_log( 'HBC AutoRegistration: User created with ID ' . $user_id . ', password properly hashed by WordPress' );
 		}
 
 		return $user_id;
@@ -316,38 +285,47 @@ class AutoRegistration {
 	}
 
 	/**
+	 * Maybe ensure user_id column exists (uses transient to avoid checking on every request).
+	 */
+	private function maybe_ensure_user_id_column() {
+		// Only check once; the transient is cleared on plugin activation.
+		if ( false !== get_transient( 'hbc_user_id_column_checked' ) ) {
+			return;
+		}
+
+		$this->ensure_user_id_column();
+	}
+
+	/**
 	 * Ensure user_id column exists in attendees table.
 	 */
 	private function ensure_user_id_column() {
 		global $wpdb;
 		$table_name = $wpdb->prefix . 'tfhb_attendees';
-		
-		error_log( 'HBC AutoRegistration: Checking for user_id column in ' . $table_name );
-		
-		// Check if user_id column exists
-		$column_exists = $wpdb->get_results( 
-			$wpdb->prepare( 
-				"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+
+		// Check if user_id column exists.
+		$column_exists = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
 				WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = 'user_id'",
 				DB_NAME,
 				$table_name
 			)
 		);
-		
-		// Add user_id column if it doesn't exist
+
+		// Add user_id column if it doesn't exist.
 		if ( empty( $column_exists ) ) {
-			error_log( 'HBC AutoRegistration: user_id column not found, adding it...' );
-			$result = $wpdb->query( 
+			$result = $wpdb->query(
 				"ALTER TABLE {$table_name} ADD COLUMN user_id INT(11) NULL AFTER email"
 			);
-			if ( $result !== false ) {
-				error_log( 'HBC AutoRegistration: Successfully added user_id column to attendees table' );
-			} else {
+			if ( false === $result ) {
 				error_log( 'HBC AutoRegistration: Failed to add user_id column: ' . $wpdb->last_error );
+				return; // Don't set transient so it retries next time.
 			}
-		} else {
-			error_log( 'HBC AutoRegistration: user_id column already exists' );
 		}
+
+		// Column exists (or was just created) — cache for 30 days.
+		set_transient( 'hbc_user_id_column_checked', 1, 30 * DAY_IN_SECONDS );
 	}
 
 	/**
@@ -440,132 +418,6 @@ The %2$s Team', 'hydra-booking-customization' ),
 	}
 
 	/**
-	 * Send enhanced welcome email with booking details.
-	 *
-	 * @param int    $user_id User ID.
-	 * @param object $attendee_booking Attendee booking object.
-	 */
-	public function send_enhanced_welcome_email( $user_id, $attendee_booking ) {
-		$user = get_user_by( 'ID', $user_id );
-		if ( ! $user ) {
-			return;
-		}
-
-		// Get the stored password.
-		$password = get_user_meta( $user_id, '_hbc_temp_password', true );
-		if ( ! $password ) {
-			return;
-		}
-
-		$site_name = get_bloginfo( 'name' );
-		$dashboard_url = home_url( '/attendee-dashboard/' );
-		$checkout_url = function_exists( 'wc_get_checkout_url' ) ? wc_get_checkout_url() : home_url();
-		
-		$subject = sprintf( __( 'Welcome to %s - Your Account Details', 'hydra-booking-customization' ), $site_name );
-		
-		$message = sprintf(
-			__( "Hello %s,\n\nWelcome to %s! Your account has been created successfully and you have been automatically logged in.\n\n=== Your Login Details ===\nUsername: %s\nPassword: %s\n\n=== Quick Links ===\n• Login Page: %s\n• Your Dashboard: %s\n• Checkout Page: %s\n\n=== What's Next? ===\nYou can now:\n• View and manage your bookings\n• Update your profile information\n• Complete your current booking at checkout\n\nFor security reasons, we recommend changing your password after your first login.\n\nIf you have any questions, please don't hesitate to contact us.\n\nThank you for choosing %s!\n\nBest regards,\nThe %s Team", 'hydra-booking-customization' ),
-			$user->display_name,
-			$site_name,
-			$user->user_login,
-			$password,
-			wp_login_url(),
-			$dashboard_url,
-			$checkout_url,
-			$site_name,
-			$site_name
-		);
-
-		// Set headers for better email formatting
-		$headers = array(
-			'Content-Type: text/plain; charset=UTF-8',
-			'From: ' . $site_name . ' <' . get_option( 'admin_email' ) . '>'
-		);
-
-		$email_sent = wp_mail( $user->user_email, $subject, $message, $headers );
-		
-		if ( $email_sent ) {
-			error_log( 'HBC AutoRegistration: Enhanced welcome email sent successfully to ' . $user->user_email );
-		} else {
-			error_log( 'HBC AutoRegistration: Failed to send enhanced welcome email to ' . $user->user_email );
-		}
-
-		// Clear the temporary password for security.
-		delete_user_meta( $user_id, '_hbc_temp_password' );
-	}
-
-	/**
-	 * Automatically log in a user by ID.
-	 *
-	 * @param int $user_id User ID to log in.
-	 */
-	public function auto_login_user( $user_id ) {
-		// Validate user ID
-		if ( ! $user_id || is_wp_error( $user_id ) ) {
-			error_log( 'HBC AutoRegistration: Invalid user ID for auto-login: ' . print_r( $user_id, true ) );
-			return false;
-		}
-
-		$user = get_user_by( 'ID', $user_id );
-		if ( ! $user ) {
-			error_log( 'HBC AutoRegistration: User not found for auto-login with ID: ' . $user_id );
-			return false;
-		}
-
-		// Check if user is already logged in
-		if ( is_user_logged_in() ) {
-			$current_user = wp_get_current_user();
-			if ( $current_user->ID === $user_id ) {
-				error_log( 'HBC AutoRegistration: User is already logged in with ID: ' . $user_id );
-				return true;
-			}
-		}
-
-		// Set authentication cookies for secure session management
-		wp_clear_auth_cookie();
-		wp_set_current_user( $user_id );
-		wp_set_auth_cookie( $user_id, true, is_ssl() );
-		
-		// Update user's last login time
-		update_user_meta( $user_id, 'last_login', current_time( 'mysql' ) );
-		
-		// Fire action for other plugins to hook into
-		do_action( 'hbc_user_auto_logged_in', $user_id );
-		do_action( 'wp_login', $user->user_login, $user );
-		
-		error_log( 'HBC AutoRegistration: Successfully auto-logged in user with ID: ' . $user_id );
-		return true;
-	}
-
-	/**
-	 * Redirect user to checkout page after successful registration/login.
-	 */
-	public function redirect_to_checkout() {
-		// Check if WooCommerce is active
-		if ( ! function_exists( 'wc_get_checkout_url' ) ) {
-			error_log( 'HBC AutoRegistration: WooCommerce not active, redirecting to home page' );
-			$redirect_url = home_url();
-		} else {
-			$redirect_url = wc_get_checkout_url();
-		}
-		
-		// Allow other plugins to modify the redirect URL
-		$redirect_url = apply_filters( 'hbc_auto_registration_redirect_url', $redirect_url );
-		
-		// Only redirect if we're in an AJAX context or appropriate hook
-		if ( wp_doing_ajax() || did_action( 'wp_ajax_nopriv_tfhb_meeting_form_submit' ) || did_action( 'wp_ajax_tfhb_meeting_form_submit' ) ) {
-			// For AJAX requests, we'll set a transient to handle redirect on next page load
-			set_transient( 'hbc_redirect_after_registration_' . get_current_user_id(), $redirect_url, 300 ); // 5 minutes
-			error_log( 'HBC AutoRegistration: Set redirect transient for checkout: ' . $redirect_url );
-		} else {
-			// Direct redirect for non-AJAX contexts
-			error_log( 'HBC AutoRegistration: Redirecting to checkout: ' . $redirect_url );
-			wp_safe_redirect( $redirect_url );
-			exit;
-		}
-	}
-
-	/**
 	 * Sanitize booking data.
 	 *
 	 * @param array $data Raw booking data.
@@ -583,29 +435,5 @@ The %2$s Team', 'hydra-booking-customization' ),
 		}
 
 		return $sanitized;
-	}
-
-	/**
-	 * Handle post-registration redirect using transient.
-	 */
-	public function handle_post_registration_redirect() {
-		if ( ! is_user_logged_in() ) {
-			return;
-		}
-
-		$user_id = get_current_user_id();
-		$redirect_url = get_transient( 'hbc_redirect_after_registration_' . $user_id );
-
-		if ( $redirect_url ) {
-			// Delete the transient to prevent multiple redirects
-			delete_transient( 'hbc_redirect_after_registration_' . $user_id );
-			
-			// Only redirect if we're not already on the target page
-			if ( ! is_admin() && ! wp_doing_ajax() && $redirect_url !== $_SERVER['REQUEST_URI'] ) {
-				error_log( 'HBC AutoRegistration: Executing post-registration redirect to: ' . $redirect_url );
-				wp_safe_redirect( $redirect_url );
-				exit;
-			}
-		}
 	}
 }

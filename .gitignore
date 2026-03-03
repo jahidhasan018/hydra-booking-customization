@@ -1,1 +1,23 @@
-node_modules
+# Dependencies
+node_modules/
+vendor/
+
+# Build cache
+.vite/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local

@@ -2,7 +2,7 @@
   <div class="modal-overlay" @click="$emit('close')">
     <div class="modal-content" @click.stop>
       <div class="modal-header">
-        <h3 class="modal-title">{{ __('edit_profile') }}</h3>
+        <h3 class="modal-title">Edit Profile</h3>
         <button @click="$emit('close')" class="modal-close">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -21,7 +21,7 @@
             <!-- Basic Information -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label for="first_name" class="form-label">{{ __('first_name') }} *</label>
+                <label for="first_name" class="form-label">First Name *</label>
                 <input
                   id="first_name"
                   v-model="form.first_name"
@@ -34,13 +34,14 @@
               </div>
 
               <div>
-                <label for="last_name" class="form-label">{{ __('last_name') }}</label>
+                <label for="last_name" class="form-label">Last Name *</label>
                 <input
                   id="last_name"
                   v-model="form.last_name"
                   type="text"
                   class="form-input"
                   :class="{ 'border-red-500': errors.last_name }"
+                  required
                 />
                 <p v-if="errors.last_name" class="form-error">{{ errors.last_name }}</p>
               </div>
@@ -49,21 +50,20 @@
             <!-- Contact Information -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label for="email" class="form-label">{{ __('email_address') }} *</label>
+                <label for="email" class="form-label">Email Address *</label>
                 <input
                   id="email"
                   v-model="form.email"
                   type="email"
                   class="form-input"
                   :class="{ 'border-red-500': errors.email }"
-                  disabled
                   required
                 />
                 <p v-if="errors.email" class="form-error">{{ errors.email }}</p>
               </div>
 
               <div>
-                <label for="phone" class="form-label">{{ __('phone_number') }}</label>
+                <label for="phone" class="form-label">Phone Number</label>
                 <input
                   id="phone"
                   v-model="form.phone"
@@ -77,28 +77,47 @@
 
             <!-- Bio -->
             <div>
-              <label for="bio" class="form-label">{{ __('bio') }}</label>
+              <label for="bio" class="form-label">Bio</label>
               <textarea
                 id="bio"
                 v-model="form.bio"
                 rows="4"
                 class="form-input"
                 :class="{ 'border-red-500': errors.bio }"
-                :placeholder="__('tell_about_yourself')"
+                placeholder="Tell us about yourself..."
               ></textarea>
               <p v-if="errors.bio" class="form-error">{{ errors.bio }}</p>
             </div>
 
-
+            <!-- Timezone -->
+            <div>
+              <label for="timezone" class="form-label">Timezone</label>
+              <select
+                id="timezone"
+                v-model="form.timezone"
+                class="form-input"
+                :class="{ 'border-red-500': errors.timezone }"
+              >
+                <option value="">Select Timezone</option>
+                <option
+                  v-for="tz in timezones"
+                  :key="tz.value"
+                  :value="tz.value"
+                >
+                  {{ tz.label }}
+                </option>
+              </select>
+              <p v-if="errors.timezone" class="form-error">{{ errors.timezone }}</p>
+            </div>
 
             <!-- Password Change Section -->
             <div class="border-t pt-6">
-              <h4 class="text-lg font-medium text-gray-900 mb-4">{{ __('change_password') }}</h4>
-              <p class="text-sm text-gray-600 mb-4">{{ __('leave_blank_password') }}</p>
+              <h4 class="text-lg font-medium text-gray-900 mb-4">Change Password</h4>
+              <p class="text-sm text-gray-600 mb-4">Leave blank to keep current password</p>
 
               <div class="space-y-4">
                 <div>
-                  <label for="current_password" class="form-label">{{ __('current_password') }}</label>
+                  <label for="current_password" class="form-label">Current Password</label>
                   <input
                     id="current_password"
                     v-model="form.current_password"
@@ -111,7 +130,7 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label for="new_password" class="form-label">{{ __('new_password') }}</label>
+                    <label for="new_password" class="form-label">New Password</label>
                     <input
                       id="new_password"
                       v-model="form.new_password"
@@ -123,7 +142,7 @@
                   </div>
 
                   <div>
-                    <label for="confirm_password" class="form-label">{{ __('confirm_new_password') }}</label>
+                    <label for="confirm_password" class="form-label">Confirm New Password</label>
                     <input
                       id="confirm_password"
                       v-model="form.confirm_password"
@@ -137,17 +156,48 @@
               </div>
             </div>
 
+            <!-- Notification Preferences -->
+            <div class="border-t pt-6">
+              <h4 class="text-lg font-medium text-gray-900 mb-4">Notification Preferences</h4>
+              <div class="space-y-3">
+                <label class="flex items-center">
+                  <input
+                    v-model="form.email_notifications"
+                    type="checkbox"
+                    class="form-checkbox"
+                  />
+                  <span class="ml-2 text-sm text-gray-700">Email notifications for booking updates</span>
+                </label>
 
+                <label class="flex items-center">
+                  <input
+                    v-model="form.sms_notifications"
+                    type="checkbox"
+                    class="form-checkbox"
+                  />
+                  <span class="ml-2 text-sm text-gray-700">SMS notifications for booking reminders</span>
+                </label>
+
+                <label class="flex items-center">
+                  <input
+                    v-model="form.calendar_sync"
+                    type="checkbox"
+                    class="form-checkbox"
+                  />
+                  <span class="ml-2 text-sm text-gray-700">Sync bookings with calendar</span>
+                </label>
+              </div>
+            </div>
           </div>
         </div>
 
         <div class="modal-footer">
           <button type="button" @click="$emit('close')" class="btn-secondary">
-            {{ __('cancel') }}
+            Cancel
           </button>
           <button type="submit" class="btn-primary" :disabled="isSubmitting">
             <div v-if="isSubmitting" class="loading-spinner-sm mr-2"></div>
-            {{ isSubmitting ? __('saving') : __('save_changes') }}
+            {{ isSubmitting ? 'Saving...' : 'Save Changes' }}
           </button>
         </div>
       </form>
@@ -156,9 +206,8 @@
 </template>
 
 <script>
-import { inject, onMounted, reactive, ref, watch } from 'vue'
-import { validateEmail } from '../../utils/helpers.js'
-import { __ } from '../../utils/i18n.js'
+import { ref, reactive, watch, onMounted, inject } from 'vue'
+import { validateEmail, validatePhone, validatePassword } from '../../utils/helpers.js'
 
 export default {
   name: 'ProfileModal',
@@ -180,9 +229,13 @@ export default {
       email: '',
       phone: '',
       bio: '',
+      timezone: '',
       current_password: '',
       new_password: '',
-      confirm_password: ''
+      confirm_password: '',
+      email_notifications: true,
+      sms_notifications: false,
+      calendar_sync: true
     })
 
     const errors = reactive({})
@@ -192,7 +245,20 @@ export default {
       message: ''
     })
 
-
+    // Common timezones
+    const timezones = [
+      { value: 'America/New_York', label: 'Eastern Time (ET)' },
+      { value: 'America/Chicago', label: 'Central Time (CT)' },
+      { value: 'America/Denver', label: 'Mountain Time (MT)' },
+      { value: 'America/Los_Angeles', label: 'Pacific Time (PT)' },
+      { value: 'Europe/London', label: 'Greenwich Mean Time (GMT)' },
+      { value: 'Europe/Paris', label: 'Central European Time (CET)' },
+      { value: 'Asia/Tokyo', label: 'Japan Standard Time (JST)' },
+      { value: 'Asia/Shanghai', label: 'China Standard Time (CST)' },
+      { value: 'Asia/Kolkata', label: 'India Standard Time (IST)' },
+      { value: 'Asia/Dhaka', label: 'Bangladesh Standard Time (BST)' },
+      { value: 'Australia/Sydney', label: 'Australian Eastern Time (AET)' }
+    ]
 
     const showAlert = (type, message) => {
       // Use toast notifications instead of legacy alert system
@@ -211,60 +277,51 @@ export default {
 
     const validateForm = () => {
       // Clear previous errors
-      Object.keys(errors).forEach(key => {
-        delete errors[key]
-      })
+      Object.keys(errors).forEach(key => delete errors[key])
 
-      let isValid = true
-
-      // Only validate if profile data has been loaded (avoid validation during initialization)
-      if (!props.profile || Object.keys(props.profile).length === 0) {
-        return false
+      // Required fields
+      if (!form.first_name.trim()) {
+        errors.first_name = 'First name is required'
       }
 
-      // Required: First name
-      if (!form.first_name || !form.first_name.trim()) {
-        errors.first_name = __('first_name_required')
-        isValid = false
+      if (!form.last_name.trim()) {
+        errors.last_name = 'Last name is required'
       }
 
-      // Required: Email
-      if (!form.email || !form.email.trim()) {
-        errors.email = __('email_required')
-        isValid = false
+      if (!form.email.trim()) {
+        errors.email = 'Email is required'
       } else if (!validateEmail(form.email)) {
-        errors.email = __('invalid_email')
-        isValid = false
+        errors.email = 'Please enter a valid email address'
       }
 
-      // Optional: Last name (no validation needed since it's optional now)
+      // Optional phone validation
+      if (form.phone && !validatePhone(form.phone)) {
+        errors.phone = 'Please enter a valid phone number'
+      }
 
-      // Password validation (only if changing password)
+      // Password validation
       if (form.new_password || form.confirm_password || form.current_password) {
         if (!form.current_password) {
-          errors.current_password = __('current_password_required')
-          isValid = false
+          errors.current_password = 'Current password is required to change password'
         }
+
         if (!form.new_password) {
-          errors.new_password = __('new_password_required')
-          isValid = false
+          errors.new_password = 'New password is required'
+        } else if (!validatePassword(form.new_password)) {
+          errors.new_password = 'Password must be at least 8 characters long'
         }
+
         if (form.new_password !== form.confirm_password) {
-          errors.confirm_password = __('passwords_not_match')
-          isValid = false
-        }
-        if (form.new_password && form.new_password.length < 6) {
-          errors.new_password = __('password_min_length')
-          isValid = false
+          errors.confirm_password = 'Passwords do not match'
         }
       }
 
-      return isValid
+      return Object.keys(errors).length === 0
     }
 
     const handleSubmit = async () => {
       if (!validateForm()) {
-        showAlert('error', __('fix_errors_below'))
+        showAlert('error', 'Please fix the errors below')
         return
       }
 
@@ -276,7 +333,11 @@ export default {
           last_name: form.last_name,
           email: form.email,
           phone: form.phone,
-          bio: form.bio
+          bio: form.bio,
+          timezone: form.timezone,
+          email_notifications: form.email_notifications,
+          sms_notifications: form.sms_notifications,
+          calendar_sync: form.calendar_sync
         }
 
         // Include password data if provided
@@ -287,7 +348,7 @@ export default {
 
         emit('save', profileData)
       } catch (error) {
-        showAlert('error', __('failed_save_profile'))
+        showAlert('error', 'Failed to save profile')
       } finally {
         isSubmitting.value = false
       }
@@ -295,22 +356,11 @@ export default {
 
     // Initialize form with profile data
     const initializeForm = () => {
-      if (props.profile && Object.keys(props.profile).length > 0) {
-        // Map profile data to form fields
-        form.first_name = props.profile.first_name || props.profile.name || ''
-        form.last_name = props.profile.last_name || ''
-        form.email = props.profile.email || props.profile.user_email || ''
-        form.phone = props.profile.phone || ''
-        form.bio = props.profile.bio || ''
-        
-        // Clear password fields
-        form.current_password = ''
-        form.new_password = ''
-        form.confirm_password = ''
-        
-        // Clear any existing errors when form is initialized with valid data
-        Object.keys(errors).forEach(key => {
-          delete errors[key]
+      if (props.profile) {
+        Object.keys(form).forEach(key => {
+          if (props.profile[key] !== undefined) {
+            form[key] = props.profile[key]
+          }
         })
       }
     }
@@ -325,10 +375,10 @@ export default {
       form,
       errors,
       alert,
+      timezones,
       showAlert,
       validateForm,
-      handleSubmit,
-      __
+      handleSubmit
     }
   }
 }

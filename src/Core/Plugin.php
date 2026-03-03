@@ -47,8 +47,6 @@ class Plugin {
 	 */
 	private $host_dashboard;
 
-
-
 	/**
 	 * Settings page.
 	 *
@@ -62,8 +60,6 @@ class Plugin {
 	 * @var JitsiIntegration
 	 */
 	private $jitsi_integration;
-
-
 
 	/**
 	 * Get plugin instance.
@@ -88,11 +84,105 @@ class Plugin {
 
 	/**
 	 * Initialize hooks.
+	 *
+	 * @since 1.0.0
 	 */
 	private function init_hooks() {
 		add_action( 'init', array( $this, 'init' ) );
+		add_action( 'init', array( $this, 'register_shortcodes' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
+	}
+
+	/**
+	 * Register Vue.js dashboard shortcodes.
+	 *
+	 * @since 1.0.0
+	 */
+	public function register_shortcodes() {
+		add_shortcode( 'hbc_attendee_dashboard', array( $this, 'render_attendee_dashboard' ) );
+		add_shortcode( 'hbc_host_dashboard', array( $this, 'render_host_dashboard' ) );
+
+		// Legacy shortcode aliases.
+		add_shortcode( 'vue_attendee_dashboard', array( $this, 'render_attendee_dashboard' ) );
+		add_shortcode( 'vue_host_dashboard', array( $this, 'render_host_dashboard' ) );
+	}
+
+	/**
+	 * Render login form for non-logged-in users.
+	 *
+	 * @since 1.0.0
+	 * @param string $dashboard_type The type of dashboard ('attendee' or 'host').
+	 * @return string Login form HTML.
+	 */
+	private function render_login_form( $dashboard_type = 'attendee' ) {
+		$login_url       = wp_login_url();
+		$dashboard_label = ( 'host' === $dashboard_type )
+			? __( 'Host Dashboard', 'hydra-booking-customization' )
+			: __( 'Attendee Dashboard', 'hydra-booking-customization' );
+
+		return sprintf(
+			'<div class="hbc-login-required" style="text-align: center; padding: 40px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 8px; margin: 20px 0;">
+				<h3 style="color: #333; margin-bottom: 15px;">%s</h3>
+				<p style="color: #666; margin-bottom: 20px;">%s</p>
+				<a href="%s" class="button button-primary" style="padding: 10px 20px; text-decoration: none;">%s</a>
+			</div>',
+			esc_html__( 'Login Required', 'hydra-booking-customization' ),
+			/* translators: %s: Dashboard type label */
+			sprintf( esc_html__( 'Please log in to access your %s.', 'hydra-booking-customization' ), esc_html( strtolower( $dashboard_label ) ) ),
+			esc_url( $login_url ),
+			esc_html__( 'Login', 'hydra-booking-customization' )
+		);
+	}
+
+	/**
+	 * Render Vue.js attendee dashboard shortcode.
+	 *
+	 * @since 1.0.0
+	 * @param array $atts Shortcode attributes.
+	 * @return string Dashboard HTML.
+	 */
+	public function render_attendee_dashboard( $atts ) {
+		$atts = shortcode_atts( array(), $atts, 'hbc_attendee_dashboard' );
+
+		if ( ! is_user_logged_in() ) {
+			return $this->render_login_form( 'attendee' );
+		}
+
+		$current_user = wp_get_current_user();
+
+		if ( ! in_array( 'hbc_attendee', $current_user->roles, true ) && ! current_user_can( 'manage_options' ) ) {
+			return '<div class="hbc-error alert alert-danger">' . esc_html__( 'Access denied. This dashboard is for attendees only.', 'hydra-booking-customization' ) . '</div>';
+		}
+
+		ob_start();
+		include HBC_PLUGIN_DIR . 'templates/vue-attendee-dashboard.php';
+		return ob_get_clean();
+	}
+
+	/**
+	 * Render Vue.js host dashboard shortcode.
+	 *
+	 * @since 1.0.0
+	 * @param array $atts Shortcode attributes.
+	 * @return string Dashboard HTML.
+	 */
+	public function render_host_dashboard( $atts ) {
+		$atts = shortcode_atts( array(), $atts, 'hbc_host_dashboard' );
+
+		if ( ! is_user_logged_in() ) {
+			return $this->render_login_form( 'host' );
+		}
+
+		$current_user = wp_get_current_user();
+
+		if ( ! in_array( 'tfhb_host', $current_user->roles, true ) && ! current_user_can( 'manage_options' ) ) {
+			return '<div class="hbc-error alert alert-danger">' . esc_html__( 'Access denied. This dashboard is for hosts only.', 'hydra-booking-customization' ) . '</div>';
+		}
+
+		ob_start();
+		include HBC_PLUGIN_DIR . 'templates/vue-host-dashboard.php';
+		return ob_get_clean();
 	}
 
 	/**
@@ -108,15 +198,17 @@ class Plugin {
 	}
 
 	/**
-	 * Initialize plugin.
+	 * Initialize plugin on the 'init' action.
+	 *
+	 * @since 1.0.0
 	 */
 	public function init() {
-		// Handle Jitsi meeting link creation for existing bookings
+		// Handle Jitsi meeting link creation for existing bookings (admin only).
 		if ( isset( $_GET['hbc_create_jitsi_links'] ) && current_user_can( 'manage_options' ) ) {
 			$this->handle_create_jitsi_links();
 		}
 		
-		// Flush rewrite rules if needed
+		// Flush rewrite rules if needed.
 		if ( get_option( 'hbc_flush_rewrite_rules' ) ) {
 			flush_rewrite_rules();
 			delete_option( 'hbc_flush_rewrite_rules' );
@@ -125,19 +217,37 @@ class Plugin {
 
 	/**
 	 * Handle creation of Jitsi meeting links for existing bookings.
+	 *
+	 * @since 1.0.0
 	 */
 	private function handle_create_jitsi_links() {
-		// For now, skip nonce verification for easier testing
-		// if ( ! wp_verify_nonce( $_GET['nonce'] ?? '', 'hbc_create_jitsi_links' ) ) {
-		// 	wp_die( 'Invalid nonce' );
-		// }
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ?? '' ) ), 'hbc_create_jitsi_links' ) ) {
+			wp_die(
+				esc_html__( 'Security check failed.', 'hydra-booking-customization' ),
+				esc_html__( 'Error', 'hydra-booking-customization' ),
+				array( 'back_link' => true )
+			);
+		}
 
 		$created_count = $this->jitsi_integration->create_missing_meeting_links();
-		
+
 		if ( $created_count > 0 ) {
-			wp_die( "Successfully created Jitsi meeting links for {$created_count} bookings. <a href='" . admin_url() . "'>Back to Admin</a>" );
+			wp_die(
+				sprintf(
+					/* translators: 1: Number of bookings, 2: Admin URL link */
+					esc_html__( 'Successfully created Jitsi meeting links for %1$d bookings. %2$s', 'hydra-booking-customization' ),
+					$created_count,
+					'<a href="' . esc_url( admin_url() ) . '">' . esc_html__( 'Back to Admin', 'hydra-booking-customization' ) . '</a>'
+				)
+			);
 		} else {
-			wp_die( "No bookings found that need Jitsi meeting links. <a href='" . admin_url() . "'>Back to Admin</a>" );
+			wp_die(
+				sprintf(
+					/* translators: %s: Admin URL link */
+					esc_html__( 'No bookings found that need Jitsi meeting links. %s', 'hydra-booking-customization' ),
+					'<a href="' . esc_url( admin_url() ) . '">' . esc_html__( 'Back to Admin', 'hydra-booking-customization' ) . '</a>'
+				)
+			);
 		}
 	}
 
@@ -156,25 +266,8 @@ class Plugin {
 			HBC_VERSION
 		);
 		
-		// Enqueue public.js script on single meeting page
-		wp_enqueue_script(
-			'hbc-public',
-			HBC_PLUGIN_URL . 'assets/js/public.js',
-			array( 'jquery' ),
-			HBC_VERSION,
-			true
-		);
-
-		// User info
-		if(is_user_logged_in()){
-			$user = wp_get_current_user();
-			$user_email = $user->user_email;
-			$username = $user->user_login;
-			wp_localize_script( 'hbc-public', 'hbc_user_info', array(
-				'email' => $user_email,
-				'username' => $username,
-			));
-		}
+		// Dashboard assets are now handled by shortcode templates
+		// Keep this method for any future global frontend assets
 	}
 
 	/**

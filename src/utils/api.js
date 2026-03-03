@@ -68,13 +68,11 @@ export const attendeeAPI = {
     // Use current user data from WordPress
     const wpData = getWpData()
     return Promise.resolve({
-      id: wpData.currentUser?.id || 0,
+      id: wpData.currentUser?.ID || 0,
       name: wpData.currentUser?.display_name || '',
-      email: wpData.currentUser?.email || wpData.currentUser?.user_email || '',
+      email: wpData.currentUser?.user_email || '',
       first_name: wpData.currentUser?.first_name || '',
       last_name: wpData.currentUser?.last_name || '',
-      phone: wpData.currentUser?.phone || '',
-      bio: wpData.currentUser?.bio || '',
       role: wpData.currentUser?.roles?.[0] || 'subscriber'
     })
   },
@@ -108,6 +106,12 @@ export const attendeeAPI = {
   changePassword: (data) => 
     api.post('fd-dashboard/change-password', data),
   
+  cancelBooking: (bookingId) => 
+    api.post('booking/change-booking-status', { booking_id: bookingId, status: 'cancelled' }),
+  
+  rescheduleBooking: (bookingId, newDate, newTime) => 
+    api.post(`booking/rebooking`, { booking_id: bookingId, new_date: newDate, new_time: newTime }),
+  
   getStats: () => {
     // Use WordPress AJAX endpoint for attendee stats
     const wpData = getWpData()
@@ -135,16 +139,8 @@ export const attendeeAPI = {
 
   getMeetingLink: (bookingId) => {
     return api.get(`jitsi/meeting-link/${bookingId}`).then(response => {
-      console.log('Raw API response for attendeeAPI:', response)
-      // The response structure should contain the meeting data directly
-      if (response && response.status !== undefined) {
-        return response
-      }
       return response.data || { status: false, meeting_url: null }
-    }).catch((error) => {
-      console.error('AttendeeAPI getMeetingLink error:', error)
-      return { status: false, meeting_url: null }
-    })
+    }).catch(() => ({ status: false, meeting_url: null }))
   },
 }
 
@@ -292,16 +288,8 @@ export const hostAPI = {
 
   getMeetingLink: (bookingId) => {
     return api.get(`jitsi/meeting-link/${bookingId}`).then(response => {
-      console.log('Raw API response for hostAPI:', response)
-      // The response structure should contain the meeting data directly
-      if (response && response.status !== undefined) {
-        return response
-      }
       return response.data || { status: false, meeting_url: null }
-    }).catch((error) => {
-      console.error('HostAPI getMeetingLink error:', error)
-      return { status: false, meeting_url: null }
-    })
+    }).catch(() => ({ status: false, meeting_url: null }))
   },
 }
 

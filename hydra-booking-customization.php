@@ -1,17 +1,17 @@
 <?php
 /**
  * Plugin Name: Hydra Booking Customization
- * Plugin URI: https://github.com/your-username/hydra-booking-customization
- * Description: Extends Hydra Booking with Jitsi Meet integration, automatic attendee registration, and enhanced dashboard functionality.
- * Version: 1.0.0
- * Author: Your Name
- * Author URI: https://yourwebsite.com
+ * Plugin URI: https://github.com/jahid018/hydra-booking-customization
+ * Description: Extends Hydra Booking with Jitsi Meet video integration, auto-registration, host & attendee dashboards, and transient-based caching.
+ * Version: 1.1.0
+ * Author: Jahid
+ * Author URI: https://github.com/jahid018
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: hydra-booking-customization
  * Domain Path: /languages
  * Requires at least: 5.0
- * Tested up to: 6.4
+ * Tested up to: 6.7
  * Requires PHP: 7.4
  * Network: false
  * Update URI: false
@@ -46,10 +46,6 @@ if ( ! defined( 'HBC_MIN_PHP_VERSION' ) ) {
 }
 if ( ! defined( 'HBC_MIN_WP_VERSION' ) ) {
 	define( 'HBC_MIN_WP_VERSION', '5.0' );
-}
-if ( ! defined( 'HBC_TEST_MODE_STATUS' ) ) {
-	$testing_mode = (bool) get_option( 'hbc_jitsi_testing_mode', false );
-	define( 'HBC_TEST_MODE_STATUS', $testing_mode ? 'active' : 'off' );
 }
 
 /**
@@ -175,249 +171,8 @@ if ( ! hbc_load_autoloader() ) {
 	return;
 }
 
-// Load debug admin page (temporary for debugging)
-if ( is_admin() ) {
-	require_once HBC_PLUGIN_DIR . 'debug-attendees-admin.php';
-	require_once HBC_PLUGIN_DIR . 'fix-attendee-user-ids.php';
-}
-
 // Initialize the plugin.
 add_action( 'plugins_loaded', 'hbc_init_plugin', 10 );
-
-/**
-  * Initialize Vue.js dashboard hooks.
-  *
-  * @since 1.0.0
-  */
- function hbc_init_vue_dashboard_hooks() {
- 	// Register Vue.js dashboard shortcodes
- 	add_shortcode('hbc_attendee_dashboard', 'hbc_render_vue_attendee_dashboard');
- 	add_shortcode('hbc_host_dashboard', 'hbc_render_vue_host_dashboard');
- 	add_shortcode('vue_attendee_dashboard', 'hbc_render_vue_attendee_dashboard'); // Legacy support
- 	add_shortcode('vue_host_dashboard', 'hbc_render_vue_host_dashboard'); // Legacy support
- }
- add_action('init', 'hbc_init_vue_dashboard_hooks');
- 
- // Initialize login redirect hooks
- add_action('init', 'hbc_init_login_redirect_hooks');
- 
- /**
-  * Initialize AJAX handlers.
-  *
-  * @since 1.0.0
-  */
- function hbc_init_ajax_handlers() {
-	// AJAX logout handler
-	add_action('wp_ajax_hbc_logout', 'hbc_ajax_logout');
-	add_action('wp_ajax_nopriv_hbc_logout', 'hbc_ajax_logout');
-}
- add_action('init', 'hbc_init_ajax_handlers');
- 
- /**
-  * Initialize login redirect hooks.
-  *
-  * @since 1.0.0
-  */
- function hbc_init_login_redirect_hooks() {
-	// Hook into login redirect filter
-	add_filter('login_redirect', 'hbc_handle_login_redirect', 10, 3);
-}
- add_action('init', 'hbc_init_login_redirect_hooks');
- 
- /**
-  * Handle login redirect based on user role.
-  *
-  * @param string $redirect_to The redirect destination URL.
-  * @param string $requested_redirect_to The requested redirect destination URL passed as a parameter.
-  * @param WP_User|WP_Error $user WP_User object if login was successful, WP_Error object otherwise.
-  * @return string The redirect URL.
-  * @since 1.0.0
-  */
- function hbc_handle_login_redirect($redirect_to, $requested_redirect_to, $user) {
-	// Only proceed if login was successful and we have a valid user
-	if (is_wp_error($user) || !is_a($user, 'WP_User')) {
-		return $redirect_to;
-	}
- 
-	// Security check: Ensure user exists and is active
-	if (!$user->exists() || !$user->ID) {
-		return $redirect_to;
-	}
- 
-	// Don't override if there's already a specific redirect requested (except admin_url)
-	if (!empty($requested_redirect_to) && $requested_redirect_to !== admin_url()) {
-		// Additional security: validate the requested redirect URL is safe
-		if (hbc_is_safe_redirect_url($requested_redirect_to)) {
-			return $redirect_to;
-		}
-	}
- 
-	// Get user's primary role using our AccessControl class
-	$user_role = \HydraBookingCustomization\Core\AccessControl::get_user_primary_role($user->ID);
- 
-	// Security check: Ensure we have a valid role
-	if (empty($user_role)) {
-		// For users without specific roles, redirect to profile or home
-		return $user->has_cap('read') ? admin_url('profile.php') : home_url();
-	}
- 
-	// Redirect based on role with additional security validation
-	switch ($user_role) {
-		case 'hbc_attendee':
-			// Double-check attendee access permission
-			if (!\HydraBookingCustomization\Core\AccessControl::can_access_attendee_dashboard($user->ID)) {
-				return home_url(); // Fallback to home if access denied
-			}
-			return home_url('/user-dashboard');
- 
-		case 'tfhb_host':
-			// Double-check host access permission
-			if (!\HydraBookingCustomization\Core\AccessControl::can_access_host_dashboard($user->ID)) {
-				return home_url(); // Fallback to home if access denied
-			}
-			return home_url('/host-dashboard');
- 
-		case 'admin':
-			// Admins go to admin dashboard unless specifically requested otherwise
-			if (empty($requested_redirect_to) || $requested_redirect_to === admin_url()) {
-				return admin_url();
-			}
-			break;
- 
-		default:
-			// For users without specific roles, use safe default
-			return $user->has_cap('read') ? admin_url('profile.php') : home_url();
-	}
- 
-	// Return original redirect if no specific handling is needed
-	return $redirect_to;
-}
- 
- /**
-  * Check if a redirect URL is safe to use.
-  *
-  * @param string $url The URL to validate.
-  * @return bool True if URL is safe, false otherwise.
-  * @since 1.0.0
-  */
- function hbc_is_safe_redirect_url($url) {
-	// Use WordPress built-in function for URL validation
-	if (!wp_validate_redirect($url)) {
-		return false;
-	}
- 
-	// Additional checks for our specific use case
-	$parsed_url = wp_parse_url($url);
-	if (!$parsed_url) {
-		return false;
-	}
- 
-	// Ensure it's a local URL or explicitly allowed external URL
-	if (isset($parsed_url['host'])) {
-		$site_host = wp_parse_url(home_url(), PHP_URL_HOST);
-		if ($parsed_url['host'] !== $site_host) {
-			// Allow only explicitly whitelisted external domains
-			$allowed_hosts = apply_filters('hbc_allowed_redirect_hosts', array());
-			if (!in_array($parsed_url['host'], $allowed_hosts, true)) {
-				return false;
-			}
-		}
-	}
- 
-	return true;
-}
- 
- /**
-  * Handle AJAX logout request.
-  *
-  * @since 1.0.0
-  */
- function hbc_ajax_logout() {
-	// Verify nonce
-	if (!wp_verify_nonce($_POST['nonce'], 'hbc_logout_nonce')) {
-		wp_send_json_error(array('message' => __('Security check failed', 'hydra-booking-customization')));
-	}
- 
- 	// Log out the user
- 	wp_logout();
- 
- 	// Send success response with login URL
- 	wp_send_json_success(array(
- 		'message' => __('Logged out successfully', 'hydra-booking-customization'),
- 		'login_url' => wp_login_url(home_url())
- 	));
- }
- 
- /**
-  * Render login form for non-logged-in users.
-  *
-  * @param string $dashboard_type The type of dashboard (attendee or host)
-  * @return string
-  * @since 1.0.0
-  */
- function hbc_render_login_form($dashboard_type = 'attendee') {
- 	// Don't redirect back to current page to avoid loops
- 	$login_url = wp_login_url();
- 	$dashboard_label = ($dashboard_type === 'host') ? __('Host Dashboard', 'hydra-booking-customization') : __('Attendee Dashboard', 'hydra-booking-customization');
- 	
- 	return sprintf(
- 		'<div class="hbc-login-required" style="text-align: center; padding: 40px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 8px; margin: 20px 0;">
- 			<h3 style="color: #333; margin-bottom: 15px;">%s</h3>
- 			<p style="color: #666; margin-bottom: 20px;">%s</p>
- 			<a href="%s" class="button button-primary" style="padding: 10px 20px; text-decoration: none;">%s</a>
- 		</div>',
- 		__('Login Required', 'hydra-booking-customization'),
- 		sprintf(__('Please log in to access your %s.', 'hydra-booking-customization'), strtolower($dashboard_label)),
- 		esc_url($login_url),
- 		__('Login', 'hydra-booking-customization')
- 	);
- }
- 
- /**
-  * Render Vue.js attendee dashboard shortcode.
-  *
-  * @since 1.0.0
-  */
- function hbc_render_vue_attendee_dashboard($atts) {
- 	$atts = shortcode_atts([], $atts, 'hbc_attendee_dashboard');
- 	
- 	// Check if user is logged in
- 	if (!is_user_logged_in()) {
- 		return hbc_render_login_form('attendee');
- 	}
- 	
- 	// Use centralized access control
- 	if (!\HydraBookingCustomization\Core\AccessControl::can_access_attendee_dashboard()) {
- 		return \HydraBookingCustomization\Core\AccessControl::get_attendee_access_denied_message();
- 	}
- 	
- 	ob_start();
- 	include plugin_dir_path(__FILE__) . 'templates/vue-attendee-dashboard.php';
- 	return ob_get_clean();
- }
- 
- /**
-  * Render Vue.js host dashboard shortcode.
-  *
-  * @since 1.0.0
-  */
- function hbc_render_vue_host_dashboard($atts) {
- 	$atts = shortcode_atts([], $atts, 'hbc_host_dashboard');
- 	
- 	// Check if user is logged in
- 	if (!is_user_logged_in()) {
- 		return hbc_render_login_form('host');
- 	}
- 	
- 	// Use centralized access control
- 	if (!\HydraBookingCustomization\Core\AccessControl::can_access_host_dashboard()) {
- 		return \HydraBookingCustomization\Core\AccessControl::get_host_access_denied_message();
- 	}
- 	
- 	ob_start();
- 	include plugin_dir_path(__FILE__) . 'templates/vue-host-dashboard.php';
- 	return ob_get_clean();
- }
 
 /**
  * Initialize the plugin.
@@ -491,20 +246,23 @@ function hbc_activate_plugin() {
 		);
 	}
 	
+	// Clear the transient so the user_id column check re-runs.
+	delete_transient( 'hbc_user_id_column_checked' );
+
 	// Create attendee role with proper capabilities.
 	hbc_create_attendee_role();
 	
 	// Create attendee dashboard page.
 	hbc_create_dashboard_page();
 	
-	// Create host dashboard page.
-	hbc_create_host_dashboard_page();
-	
 	// Set default options.
 	hbc_set_default_options();
 	
 	// Flush rewrite rules.
 	flush_rewrite_rules();
+
+	// Flush all plugin caches.
+	HydraBookingCustomization\Core\CacheManager::flush_all();
 	
 	// Set activation flag for welcome notice.
 	set_transient( 'hbc_activation_notice', true, 30 );
@@ -572,39 +330,6 @@ function hbc_create_dashboard_page() {
 }
 
 /**
- * Create the host dashboard page.
- *
- * @since 1.0.0
- */
-function hbc_create_host_dashboard_page() {
-	// Check if page already exists.
-	$existing_page_id = get_option( 'hbc_host_dashboard_page_id' );
-	if ( $existing_page_id && get_post( $existing_page_id ) ) {
-		return;
-	}
-	
-	$page_data = array(
-		'post_title'     => __( 'Host Dashboard', 'hydra-booking-customization' ),
-		'post_content'   => '[hbc_host_dashboard]',
-		'post_status'    => 'publish',
-		'post_type'      => 'page',
-		'post_name'      => 'host-dashboard',
-		'post_author'    => get_current_user_id(),
-		'comment_status' => 'closed',
-		'ping_status'    => 'closed',
-		'meta_input'     => array(
-			'_hbc_dashboard_page' => true,
-		),
-	);
-	
-	$page_id = wp_insert_post( $page_data, true );
-	
-	if ( ! is_wp_error( $page_id ) ) {
-		update_option( 'hbc_host_dashboard_page_id', $page_id );
-	}
-}
-
-/**
  * Set default plugin options.
  *
  * @since 1.0.0
@@ -641,6 +366,10 @@ function hbc_deactivate_plugin() {
 	
 	// Clear transients.
 	delete_transient( 'hbc_activation_notice' );
+	delete_transient( 'hbc_user_id_column_checked' );
+
+	// Flush all plugin caches.
+	HydraBookingCustomization\Core\CacheManager::flush_all();
 	
 	// Flush rewrite rules.
 	flush_rewrite_rules();
@@ -660,21 +389,15 @@ function hbc_uninstall_plugin() {
 	// Remove custom role.
 	remove_role( 'hbc_attendee' );
 	
-	// Remove dashboard pages.
-	$attendee_page_id = get_option( 'hbc_attendee_dashboard_page_id' );
-	if ( $attendee_page_id ) {
-		wp_delete_post( $attendee_page_id, true );
-	}
-	
-	$host_page_id = get_option( 'hbc_host_dashboard_page_id' );
-	if ( $host_page_id ) {
-		wp_delete_post( $host_page_id, true );
+	// Remove dashboard page.
+	$page_id = get_option( 'hbc_attendee_dashboard_page_id' );
+	if ( $page_id ) {
+		wp_delete_post( $page_id, true );
 	}
 	
 	// Remove plugin options.
 	$options_to_remove = array(
 		'hbc_attendee_dashboard_page_id',
-		'hbc_host_dashboard_page_id',
 		'hbc_jitsi_domain',
 		'hbc_auto_registration',
 		'hbc_email_notifications',

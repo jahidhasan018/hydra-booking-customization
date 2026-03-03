@@ -5,23 +5,16 @@
       <div class="bg-white p-6 rounded-lg shadow-lg">
         <div class="flex items-center space-x-3">
           <div class="loading-spinner"></div>
-          <span class="text-gray-700">{{ __('loading') }}</span>
+          <span class="text-gray-700">Loading...</span>
         </div>
       </div>
     </div>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <!-- Header -->
-      <div class="mb-8 hbc-dashboard-header">
-        <div class="hbc-header-content">
-          <div class="hbc-header-text">
-            <h1 class="text-3xl font-bold text-gray-900">{{ __('host_dashboard') }}</h1>
-            <p class="mt-2 text-gray-600">{{ __('manage_meetings_bookings') }}</p>
-          </div>
-          <div class="hbc-header-actions">
-            <button @click="handleLogout" class="hbc-logout-btn">{{ __('logout') }}</button>
-          </div>
-        </div>
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Host Dashboard</h1>
+        <p class="mt-2 text-gray-600">Manage your meetings, bookings, and join links</p>
       </div>
 
       <!-- Alert Messages -->
@@ -33,7 +26,7 @@
       </div>
 
       <!-- Stats Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div class="card">
           <div class="card-body">
             <div class="flex items-center">
@@ -46,13 +39,29 @@
               </div>
               <div class="ml-4">
                 <p class="text-2xl font-semibold text-gray-900">{{ stats.today_meetings || 0 }}</p>
-                <p class="text-sm text-gray-600">{{ __('todays_meetings') }}</p>
+                <p class="text-sm text-gray-600">Today's Meetings</p>
               </div>
             </div>
           </div>
         </div>
 
-
+        <div class="card">
+          <div class="card-body">
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-warning-100 rounded-full flex items-center justify-center">
+                  <svg class="w-5 h-5 text-warning-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+              <div class="ml-4">
+                <p class="text-2xl font-semibold text-gray-900">{{ stats.upcoming_meetings || 0 }}</p>
+                <p class="text-sm text-gray-600">Upcoming</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div class="card">
           <div class="card-body">
@@ -66,7 +75,7 @@
               </div>
               <div class="ml-4">
                 <p class="text-2xl font-semibold text-gray-900">{{ stats.completed_meetings || 0 }}</p>
-                <p class="text-sm text-gray-600">{{ __('completed') }}</p>
+                <p class="text-sm text-gray-600">Completed</p>
               </div>
             </div>
           </div>
@@ -84,7 +93,7 @@
               </div>
               <div class="ml-4">
                 <p class="text-2xl font-semibold text-gray-900">{{ stats.active_join_links || 0 }}</p>
-                <p class="text-sm text-gray-600">{{ __('active_links') }}</p>
+                <p class="text-sm text-gray-600">Active Links</p>
               </div>
             </div>
           </div>
@@ -115,12 +124,12 @@
         <!-- Bookings Tab -->
         <div v-show="activeTab === 'bookings'" class="p-6">
           <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-medium text-gray-900">{{ __('bookings') }}</h3>
+            <h3 class="text-lg font-medium text-gray-900">Bookings</h3>
             <button @click="loadBookings(activeFilter)" class="btn-primary">
               <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
               </svg>
-              {{ __('refresh') }}
+              Refresh
             </button>
           </div>
 
@@ -168,9 +177,9 @@
         <!-- Join Links Tab -->
         <div v-show="activeTab === 'join-links'" class="p-6">
           <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-medium text-gray-900">{{ __('join_links_management') }}</h3>
+            <h3 class="text-lg font-medium text-gray-900">Join Links Management</h3>
             <button @click="openJoinLinkModal" class="btn-primary">
-              {{ __('generate_new_link') }}
+              Generate New Link
             </button>
           </div>
 
@@ -184,35 +193,39 @@
         <!-- Profile Tab -->
         <div v-show="activeTab === 'profile'" class="p-6">
           <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-medium text-gray-900">{{ __('profile_settings') }}</h3>
+            <h3 class="text-lg font-medium text-gray-900">Profile Settings</h3>
             <button @click="openProfileModal" class="btn-primary">
               <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
               </svg>
-              {{ __('edit_profile') }}
+              Edit Profile
             </button>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label class="form-label">{{ __('first_name') }}</label>
-              <p class="text-gray-700">{{ profile.first_name || __('not_set') }}</p>
+              <label class="form-label">First Name</label>
+              <p class="text-gray-700">{{ profile.first_name || 'Not set' }}</p>
             </div>
             <div>
-              <label class="form-label">{{ __('last_name') }}</label>
-              <p class="text-gray-700">{{ profile.last_name || __('not_set') }}</p>
+              <label class="form-label">Last Name</label>
+              <p class="text-gray-700">{{ profile.last_name || 'Not set' }}</p>
             </div>
             <div>
-              <label class="form-label">{{ __('email') }}</label>
-              <p class="text-gray-700">{{ profile.email || __('not_set') }}</p>
+              <label class="form-label">Email</label>
+              <p class="text-gray-700">{{ profile.email || 'Not set' }}</p>
             </div>
             <div>
-              <label class="form-label">{{ __('phone') }}</label>
-              <p class="text-gray-700">{{ profile.phone || __('not_set') }}</p>
+              <label class="form-label">Phone</label>
+              <p class="text-gray-700">{{ profile.phone || 'Not set' }}</p>
             </div>
             <div class="md:col-span-2">
-              <label class="form-label">{{ __('bio') }}</label>
-              <p class="text-gray-700">{{ profile.bio || __('not_set') }}</p>
+              <label class="form-label">Bio</label>
+              <p class="text-gray-700">{{ profile.bio || 'Not set' }}</p>
+            </div>
+            <div>
+              <label class="form-label">Timezone</label>
+              <p class="text-gray-700">{{ profile.timezone || 'Not set' }}</p>
             </div>
           </div>
         </div>
@@ -220,12 +233,12 @@
         <!-- History Tab -->
         <div v-show="activeTab === 'history'" class="p-6">
           <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-medium text-gray-900">{{ __('meeting_history') }}</h3>
+            <h3 class="text-lg font-medium text-gray-900">Meeting History</h3>
             <button @click="loadBookings('history')" class="btn-primary">
               <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
               </svg>
-              {{ __('refresh') }}
+              Refresh
             </button>
           </div>
 
@@ -262,10 +275,9 @@
 </template>
 
 <script>
-import { inject, onMounted, reactive, ref, watch } from 'vue'
+import { ref, reactive, onMounted, watch, inject } from 'vue'
 import { hostAPI } from '../utils/api.js'
-import { copyToClipboard, formatDateTime, getStatusClass, getStatusText, handleApiError } from '../utils/helpers.js'
-import { __ } from '../utils/i18n.js'
+import { formatDateTime, getStatusClass, getStatusText, handleApiError, copyToClipboard } from '../utils/helpers.js'
 import BookingsList from './BookingsList.vue'
 import JoinLinksList from './JoinLinksList.vue'
 import BookingDetailsModal from './modals/BookingDetailsModal.vue'
@@ -297,8 +309,7 @@ export default {
       type: '',
       message: ''
     })
-    const activeFilter = ref('today')
-    const logoutUrl = ref(window.hbcHostData?.logoutUrl || '/wp-login.php?action=logout')
+    const activeFilter = ref('upcoming')
 
     // Modal states
     const showBookingModal = ref(false)
@@ -308,17 +319,18 @@ export default {
 
     // Tab configuration
     const tabs = [
-      { id: 'bookings', name: __('bookings') },
-      { id: 'join-links', name: __('join_links') },
-      { id: 'profile', name: __('profile') }
+      { id: 'bookings', name: 'Bookings' },
+      { id: 'join-links', name: 'Join Links' },
+      { id: 'profile', name: 'Profile' }
     ]
 
     // Filter configuration
     const filters = [
-      { id: 'today', name: __('today_filter'), icon: 'clock' },
-      { id: 'completed', name: __('completed_filter'), icon: 'check' },
-      { id: 'cancelled', name: __('cancelled_filter'), icon: 'x' },
-      { id: 'history', name: __('all_history_filter'), icon: 'archive' }
+      { id: 'upcoming', name: 'Upcoming', icon: 'calendar' },
+      { id: 'today', name: 'Today', icon: 'clock' },
+      { id: 'completed', name: 'Completed', icon: 'check' },
+      { id: 'cancelled', name: 'Cancelled', icon: 'x' },
+      { id: 'history', name: 'All History', icon: 'archive' }
     ]
 
     // Methods
@@ -356,7 +368,6 @@ export default {
         }
         
         const data = await hostAPI.getBookings(apiType)
-        // Process bookings data from API
         
         // The API returns an object with { status: true, bookings: [...] }
         let allBookings = (data && data.bookings && Array.isArray(data.bookings)) ? data.bookings : []
@@ -382,18 +393,9 @@ export default {
                    (booking.status === 'confirmed' || booking.status === 'pending')
           })
         } else if (filterType === 'completed') {
-          // Show bookings that are marked as completed OR have ended (past end time)
-          allBookings = allBookings.filter(booking => {
-            if (booking.status === 'completed') {
-              return true
-            }
-            // Check if meeting has ended
-            const bookingDate = booking.meeting_dates
-            const endTime = booking.end_time || '23:59:59'
-            const bookingEndDateTime = new Date(bookingDate + ' ' + endTime)
-            const now = new Date()
-            return bookingEndDateTime < now
-          })
+          allBookings = allBookings.filter(booking => 
+            booking.status === 'completed'
+          )
         } else if (filterType === 'cancelled') {
           allBookings = allBookings.filter(booking => 
             booking.status === 'cancelled' || booking.status === 'canceled'
@@ -401,7 +403,6 @@ export default {
         }
         
         bookings.value = allBookings
-        // Filtered bookings assigned successfully
       } catch (error) {
         console.error('Bookings load error:', error) // Debug log
         showAlert('error', handleApiError(error))
@@ -413,12 +414,10 @@ export default {
     const loadJoinLinks = async () => {
       try {
         const data = await hostAPI.getJoinLinks()
-        // Process join links data from API
         
         // Check if data has join_links property or if it's the array directly
         joinLinks.value = data.join_links || (Array.isArray(data) ? data : [])
         
-        // Join links assigned successfully
       } catch (error) {
         console.error('Join links load error:', error) // Debug log
         showAlert('error', handleApiError(error))
@@ -428,7 +427,6 @@ export default {
     const loadProfile = async () => {
       try {
         const data = await hostAPI.getProfile()
-        // Process profile data from API
         
         if (data && data.profile) {
           // Map the profile data correctly
@@ -442,6 +440,7 @@ export default {
             display_name: profileData.display_name || '',
             phone: hostData.phone_number || '',
             bio: profileData.description || hostData.about || '',
+            timezone: hostData.time_zone || '',
             avatar: hostData.avatar || '',
             featured_image: hostData.featured_image || '',
             status: hostData.status || '',
@@ -449,7 +448,6 @@ export default {
             availability_id: hostData.availability_id || ''
           })
           
-          // Profile data assigned successfully
         }
       } catch (error) {
         console.error('Profile load error:', error) // Debug log
@@ -460,15 +458,13 @@ export default {
     const loadStats = async () => {
       try {
         const data = await hostAPI.getStats()
-        // Process stats data from API
         
         // The backend returns stats directly, not wrapped in a stats object
         Object.assign(stats, data || {})
         
-        // Stats data assigned successfully
       } catch (error) {
         console.error('Failed to load stats:', error)
-        showAlert('error', __('failed_load_statistics'))
+        showAlert('error', 'Failed to load statistics')
       }
     }
 
@@ -476,7 +472,7 @@ export default {
       try {
         isLoading.value = true
         await hostAPI.updateBookingStatus(bookingId, status)
-        showAlert('success', __('booking_status_updated').replace('{status}', status))
+        showAlert('success', `Booking ${status} successfully`)
         await loadBookings(activeTab.value)
         await loadStats()
       } catch (error) {
@@ -506,7 +502,7 @@ export default {
         showBookingModal.value = true
       } catch (error) {
         console.error('Error fetching booking details:', error)
-        showAlert('error', __('booking_details_error') + (error.response?.data?.message || error.message))
+        showAlert('error', 'Error fetching booking details: ' + (error.response?.data?.message || error.message))
       }
     }
 
@@ -523,7 +519,7 @@ export default {
           linkData.customUrl
         )
         showJoinLinkModal.value = false
-        showAlert('success', __('join_link_generated'))
+        showAlert('success', 'Join link generated successfully')
         await loadJoinLinks()
         await loadStats()
       } catch (error) {
@@ -537,7 +533,7 @@ export default {
       try {
         isLoading.value = true
         await hostAPI.sendJoinLink(linkId)
-        showAlert('success', __('join_link_sent'))
+        showAlert('success', 'Join link sent to attendees')
       } catch (error) {
         showAlert('error', handleApiError(error))
       } finally {
@@ -548,9 +544,9 @@ export default {
     const copyJoinLink = async (url) => {
       const success = await copyToClipboard(url)
       if (success) {
-        showAlert('success', __('join_link_copied'))
+        showAlert('success', 'Join link copied to clipboard')
       } else {
-        showAlert('error', __('failed_copy_link'))
+        showAlert('error', 'Failed to copy link')
       }
     }
 
@@ -564,7 +560,7 @@ export default {
         await hostAPI.updateProfile(profileData)
         Object.assign(profile, profileData)
         showProfileModal.value = false
-        showAlert('success', __('profile_updated'))
+        showAlert('success', 'Profile updated successfully')
       } catch (error) {
         showAlert('error', handleApiError(error))
       } finally {
@@ -583,7 +579,7 @@ export default {
           loadStats()
         ])
       } catch (error) {
-        showAlert('error', __('failed_load_dashboard'))
+        showAlert('error', 'Failed to load dashboard data')
       } finally {
         isLoading.value = false
       }
@@ -605,32 +601,6 @@ export default {
       }
     })
 
-    // Handle logout
-    const handleLogout = async () => {
-      if (confirm(__('logout_confirmation'))) {
-        try {
-          const response = await fetch(window.hbcHostData.ajaxUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `action=hbc_logout&nonce=${window.hbcHostData.logoutNonce}`
-          })
-          
-          const data = await response.json()
-          
-          if (data.success) {
-            window.location.href = data.data.login_url
-          } else {
-            showAlert('error', __('logout_failed_retry'))
-          }
-        } catch (error) {
-          console.error('Error:', error)
-          showAlert('error', __('logout_failed_retry'))
-        }
-      }
-    }
-
     onMounted(init)
 
     return {
@@ -649,7 +619,6 @@ export default {
       selectedBooking,
       tabs,
       filters,
-      logoutUrl,
 
       // Methods
       showAlert,
@@ -663,13 +632,11 @@ export default {
       copyJoinLink,
       openProfileModal,
       updateProfile,
-      handleLogout,
 
       // Utilities
       formatDateTime,
       getStatusClass,
-      getStatusText,
-      __
+      getStatusText
     }
   }
 }

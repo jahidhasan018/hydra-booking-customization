@@ -53,7 +53,6 @@ class Settings {
 		register_setting( 'hbc_settings', 'hbc_cancellation_hours_limit' );
 		register_setting( 'hbc_settings', 'hbc_allow_booking_rescheduling' );
 		register_setting( 'hbc_settings', 'hbc_rescheduling_hours_limit' );
-		register_setting( 'hbc_settings', 'hbc_jitsi_testing_mode' );
 
 		// Add settings sections.
 		add_settings_section(
@@ -77,18 +76,10 @@ class Settings {
 			'hbc_settings'
 		);
 
-		add_settings_section(
-			'hbc_jitsi_section',
-			__( 'Jitsi Meeting Settings', 'hydra-booking-customization' ),
-			array( $this, 'render_jitsi_section' ),
-			'hbc_settings'
-		);
-
 		// Add settings fields.
 		$this->add_auto_registration_fields();
 		$this->add_dashboard_fields();
 		$this->add_booking_management_fields();
-		$this->add_jitsi_fields();
 	}
 
 	/**
@@ -143,7 +134,61 @@ class Settings {
 	 * Add booking management fields.
 	 */
 	private function add_booking_management_fields() {
+		add_settings_field(
+			'hbc_allow_booking_cancellation',
+			__( 'Allow Booking Cancellation', 'hydra-booking-customization' ),
+			array( $this, 'render_checkbox_field' ),
+			'hbc_settings',
+			'hbc_booking_management_section',
+			array(
+				'option_name'   => 'hbc_allow_booking_cancellation',
+				'description'   => __( 'Allow attendees to cancel their bookings from the dashboard.', 'hydra-booking-customization' ),
+				'default_value' => true,
+			)
+		);
 
+		add_settings_field(
+			'hbc_cancellation_hours_limit',
+			__( 'Cancellation Hours Limit', 'hydra-booking-customization' ),
+			array( $this, 'render_number_field' ),
+			'hbc_settings',
+			'hbc_booking_management_section',
+			array(
+				'option_name'   => 'hbc_cancellation_hours_limit',
+				'description'   => __( 'Minimum hours before the meeting that cancellation is allowed.', 'hydra-booking-customization' ),
+				'default_value' => 24,
+				'min'           => 1,
+				'max'           => 168,
+			)
+		);
+
+		add_settings_field(
+			'hbc_allow_booking_rescheduling',
+			__( 'Allow Booking Rescheduling', 'hydra-booking-customization' ),
+			array( $this, 'render_checkbox_field' ),
+			'hbc_settings',
+			'hbc_booking_management_section',
+			array(
+				'option_name'   => 'hbc_allow_booking_rescheduling',
+				'description'   => __( 'Allow attendees to reschedule their bookings from the dashboard.', 'hydra-booking-customization' ),
+				'default_value' => true,
+			)
+		);
+
+		add_settings_field(
+			'hbc_rescheduling_hours_limit',
+			__( 'Rescheduling Hours Limit', 'hydra-booking-customization' ),
+			array( $this, 'render_number_field' ),
+			'hbc_settings',
+			'hbc_booking_management_section',
+			array(
+				'option_name'   => 'hbc_rescheduling_hours_limit',
+				'description'   => __( 'Minimum hours before the meeting that rescheduling is allowed.', 'hydra-booking-customization' ),
+				'default_value' => 48,
+				'min'           => 1,
+				'max'           => 168,
+			)
+		);
 	}
 
 	/**
@@ -287,33 +332,6 @@ class Settings {
 			<p class="description"><?php echo esc_html( $description ); ?></p>
 		<?php endif; ?>
 		<?php
-	}
-
-	/**
-	 * Render Jitsi section.
-	 */
-	public function render_jitsi_section() {
-		?>
-		<p><?php _e( 'Configure Jitsi meeting integration settings.', 'hydra-booking-customization' ); ?></p>
-		<?php
-	}
-
-	/**
-	 * Add Jitsi fields.
-	 */
-	private function add_jitsi_fields() {
-		add_settings_field(
-			'hbc_jitsi_testing_mode',
-			__( 'Enable Testing Mode', 'hydra-booking-customization' ),
-			array( $this, 'render_checkbox_field' ),
-			'hbc_settings',
-			'hbc_jitsi_section',
-			array(
-				'option_name'   => 'hbc_jitsi_testing_mode',
-				'description'   => __( 'Bypass time restrictions for meeting access. Allows immediate access to Start/Join Meeting buttons regardless of scheduled time. <strong>For testing purposes only.</strong>', 'hydra-booking-customization' ),
-				'default_value' => false,
-			)
-		);
 	}
 
 	/**

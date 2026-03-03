@@ -5,15 +5,18 @@ import './style.css'
 
 // Function to mount the Vue app
 function mountAttendeeApp() {
-  // Attempting to mount Attendee Dashboard
+  console.log('Attempting to mount Attendee Dashboard...')
   
   const container = document.getElementById('attendee-dashboard-app')
-  // Container found check
+  console.log('Container found:', !!container)
   
   if (container && !container.__vue_app__) {
     try {
       // Check if WordPress data is available
-      // WordPress data availability checked
+      console.log('WordPress data available:', {
+        attendeeData: !!window.hbcAttendeeData,
+        hostData: !!window.hbcHostData
+      })
       
       // Create the Vue app
       const app = createApp(AttendeeDashboard)
@@ -50,7 +53,7 @@ function mountAttendeeApp() {
         loading.style.display = 'none'
       }
       
-      // Attendee Dashboard mounted successfully
+      console.log('Attendee Dashboard mounted successfully')
     } catch (error) {
       console.error('Failed to mount Attendee Dashboard:', error)
       // Show fallback content
@@ -65,7 +68,7 @@ function mountAttendeeApp() {
       `
     }
   } else if (container && container.__vue_app__) {
-    // Attendee Dashboard already mounted
+    console.log('Attendee Dashboard already mounted')
   } else {
     console.error('Attendee Dashboard container not found')
   }

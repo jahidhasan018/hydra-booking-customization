@@ -5,15 +5,18 @@ import './style.css'
 
 // Function to mount the Vue app
 function mountHostApp() {
-  // Attempting to mount Host Dashboard
+  console.log('Attempting to mount Host Dashboard...')
   
   const container = document.getElementById('host-dashboard-app')
-  // Container found check
+  console.log('Container found:', !!container)
   
   if (container && !container.__vue_app__) {
     try {
       // Check if WordPress data is available
-      // WordPress data availability checked
+      console.log('WordPress data available:', {
+        attendeeData: !!window.hbcAttendeeData,
+        hostData: !!window.hbcHostData
+      })
       
       // Create the Vue app
       const app = createApp(HostDashboard)
@@ -50,7 +53,7 @@ function mountHostApp() {
         loading.style.display = 'none'
       }
       
-      // Host Dashboard mounted successfully
+      console.log('Host Dashboard mounted successfully')
     } catch (error) {
       console.error('Failed to mount Host Dashboard:', error)
       // Show fallback content
@@ -65,7 +68,7 @@ function mountHostApp() {
       `
     }
   } else if (container && container.__vue_app__) {
-    // Host Dashboard already mounted
+    console.log('Host Dashboard already mounted')
   } else {
     console.error('Host Dashboard container not found')
   }

@@ -51,11 +51,34 @@ class JitsiIntegration {
     const DEFAULT_MEETING_LANGUAGE = 'en';
 
     /**
+     * Meeting lifecycle manager.
+     *
+     * @var MeetingLifecycle
+     */
+    private $lifecycle;
+
+    /**
+     * Meeting REST API handler.
+     *
+     * @var MeetingRestApi
+     */
+    private $rest_api;
+
+    /**
+     * Meeting page renderer.
+     *
+     * @var MeetingPage
+     */
+    private $meeting_page;
+
+    /**
      * Constructor - Initialize hooks and actions
      */
     public function __construct() {
         $this->init_hooks();
-        $this->init_cron_jobs();
+        $this->lifecycle    = new MeetingLifecycle( $this );
+        $this->rest_api     = new MeetingRestApi( $this );
+        $this->meeting_page = new MeetingPage( $this );
     }
 
     /**
@@ -64,29 +87,18 @@ class JitsiIntegration {
      * @since 1.0.0
      */
     private function init_hooks() {
-        // Booking lifecycle hooks
+        // Booking lifecycle hooks.
         add_action( 'hydra_booking/after_booking_confirmed', array( $this, 'create_jitsi_meeting_link' ), 20, 1 );
-        
-        // Dashboard and frontend hooks
+
+        // Dashboard and frontend hooks.
         add_filter( 'hbc_attendee_booking_data', array( $this, 'add_jitsi_link_to_booking_data' ), 10, 2 );
         add_action( 'hbc_booking_actions_before', array( $this, 'display_meeting_button' ) );
-        
-        // AJAX handlers
+
+        // AJAX handlers.
         add_action( 'wp_ajax_hbc_join_jitsi_meeting', array( $this, 'ajax_join_meeting' ) );
-        
-        // REST API endpoints
-        add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
-        
-        // Asset and routing hooks
+
+        // Asset hooks. Page routing is handled by MeetingPage.
         add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_jitsi_scripts' ) );
-        add_action( 'init', array( $this, 'add_meeting_page_rewrite_rule' ) );
-        add_action( 'template_redirect', array( $this, 'handle_meeting_page_request' ) );
-        add_filter( 'query_vars', array( $this, 'add_meeting_query_vars' ) );
-        
-        // Meeting duration and reminder hooks
-        add_action( 'hbc_meeting_reminder', array( $this, 'send_meeting_reminder' ), 10, 2 );
-        add_action( 'hbc_meeting_cleanup', array( $this, 'cleanup_expired_meeting' ), 10, 1 );
-        add_action( 'hbc_meeting_terminate', array( $this, 'terminate_meeting_room' ), 10, 1 );
     }
 
     /**
@@ -96,7 +108,7 @@ class JitsiIntegration {
      */
     public function create_jitsi_meeting_link( $booking ) {
         if ( ! $this->is_jitsi_plugin_active() ) {
-            error_log( 'HBC Jitsi Integration: Jitsi Meet plugin is not active' );
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) { error_log( 'HBC Jitsi Integration: Jitsi Meet plugin is not active' ); }
             return;
         }
 
@@ -116,9 +128,9 @@ class JitsiIntegration {
         $this->create_meeting_access_tokens( $booking->booking_id );
         
         // Schedule meeting reminders and cleanup
-        $this->schedule_meeting_events( $booking );
+        $this->lifecycle->schedule_meeting_events( $booking );
         
-        error_log( "HBC Jitsi Integration: Created meeting link for booking {$booking->booking_id}: {$meeting_url}" );
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) { error_log( "HBC Jitsi Integration: Created meeting link for booking {$booking->booking_id}: {$meeting_url}" ); }
     }
 
     /**
@@ -184,11 +196,13 @@ class JitsiIntegration {
     }
 
     /**
-     * Get Jitsi configuration from plugin settings
-     * 
+     * Get Jitsi configuration from plugin settings.
+     *
+     * Public so child classes (MeetingPage) can access it.
+     *
      * @return array
      */
-    private function get_jitsi_config() {
+    public function get_jitsi_config() {
         $config = array(
             'api_select' => get_option( 'jitsi_opt_select_api', 'free' ),
             'domain' => get_option( 'jitsi_opt_free_domain', 'meet.jit.si' ),
@@ -321,12 +335,14 @@ class JitsiIntegration {
     }
 
     /**
-     * Get meeting data from booking meta
+     * Get meeting data from booking meta.
+     *
+     * Public so child classes (MeetingLifecycle, MeetingRestApi, MeetingPage) can access it.
      * 
      * @param int $booking_id
      * @return array|null
      */
-    private function get_meeting_data( $booking_id ) {
+    public function get_meeting_data( $booking_id ) {
         global $wpdb;
         
         $table_name = $wpdb->prefix . 'tfhb_booking_meta';
@@ -357,26 +373,11 @@ class JitsiIntegration {
             $meeting_end_time = strtotime( $booking->meeting_dates . ' ' . $booking->end_time );
             $user_id = get_current_user_id();
             
-            // Check if testing mode is enabled to bypass time restrictions
-			$testing_mode = ( HBC_TEST_MODE_STATUS === 'active' );
-            
             // Determine if current user is the host
             $user_role = $this->get_user_role_in_meeting( $booking->booking_id, $user_id );
             
             // Generate secure meeting URL for current user
             $secure_meeting_url = $this->generate_secure_meeting_url( $booking->booking_id, $user_id, $user_role );
-            
-            // In testing mode, always show active meeting button
-            if ( $testing_mode ) {
-                $button_text = $user_role === 'host' ? __( 'Start Meeting', 'hydra-booking-customization' ) : __( 'Join Meeting', 'hydra-booking-customization' );
-                echo '<a href="' . esc_url( $secure_meeting_url ) . '" class="button button-primary hbc-secure-meeting-btn hbc-btn-active" target="_blank">';
-                echo '<i class="fas fa-video"></i> ' . esc_html( $button_text );
-                if ( $user_role === 'host' ) {
-                    echo ' <span class="host-badge">' . esc_html__( '(Host)', 'hydra-booking-customization' ) . '</span>';
-                }
-                echo '</a>';
-                return;
-            }
             
             // Show join button only if meeting is today or in the future
             if ( $meeting_time <= $current_time && $current_time <= $meeting_end_time ) {
@@ -419,13 +420,15 @@ class JitsiIntegration {
     }
 
     /**
-     * Get user role in meeting (host or attendee)
+     * Get user role in meeting (host or attendee).
+     *
+     * Public so child classes can access it.
      * 
      * @param int $booking_id
      * @param int $user_id
      * @return string
      */
-    private function get_user_role_in_meeting( $booking_id, $user_id ) {
+    public function get_user_role_in_meeting( $booking_id, $user_id ) {
         global $wpdb;
         
         $bookings_table = $wpdb->prefix . 'tfhb_bookings';
@@ -519,12 +522,14 @@ class JitsiIntegration {
             $secure_meeting_url = home_url( '/meeting/' . $token . '/' );
 
             // Log successful meeting join attempt
-            error_log( sprintf( 
-                'Jitsi Integration: User %d successfully generated token for booking %d with role %s', 
-                $user_id, 
-                $booking_id, 
-                $user_role 
-            ) );
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( sprintf(
+                    'Jitsi Integration: User %d successfully generated token for booking %d with role %s',
+                    $user_id,
+                    $booking_id,
+                    $user_role
+                ) );
+            }
 
             wp_send_json_success( array(
                 'meeting_url' => esc_url( $secure_meeting_url ),
@@ -535,7 +540,7 @@ class JitsiIntegration {
             
         } catch ( \Exception $e ) {
             // Log the error for debugging
-            error_log( 'Jitsi Integration AJAX Error: ' . $e->getMessage() );
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) { error_log( 'Jitsi Integration AJAX Error: ' . $e->getMessage() ); }
             
             wp_send_json_error( array( 
                 'message' => __( 'An unexpected error occurred. Please try again later.', 'hydra-booking-customization' ),
@@ -544,132 +549,20 @@ class JitsiIntegration {
         }
     }
 
-    /**
-     * Register REST API routes
-     * 
-     * @since 1.0.0
-     */
-    public function register_rest_routes() {
-        register_rest_route( 'hydra-booking/v1', '/jitsi/meeting-link/(?P<booking_id>\d+)', array(
-            'methods' => 'GET',
-            'callback' => array( $this, 'rest_get_meeting_link' ),
-            'permission_callback' => array( $this, 'rest_permission_check' ),
-            'args' => array(
-                'booking_id' => array(
-                    'required' => true,
-                    'validate_callback' => function( $param, $request, $key ) {
-                        return is_numeric( $param );
-                    }
-                ),
-            ),
-        ) );
-    }
+    // REST API routes are now handled by MeetingRestApi class.
+
+
 
     /**
-     * REST API permission check
-     * 
-     * @param WP_REST_Request $request
-     * @return bool|WP_Error
-     */
-    public function rest_permission_check( $request ) {
-        if ( ! is_user_logged_in() ) {
-            return new WP_Error( 'rest_forbidden', __( 'You must be logged in to access meeting links.', 'hydra-booking-customization' ), array( 'status' => 401 ) );
-        }
-        
-        $booking_id = (int) $request['booking_id'];
-        $user_id = get_current_user_id();
-        
-        // Check if user has access to this booking
-        if ( ! $this->user_has_booking_access( $user_id, $booking_id ) ) {
-            return new WP_Error( 'rest_forbidden', __( 'You do not have permission to access this meeting.', 'hydra-booking-customization' ), array( 'status' => 403 ) );
-        }
-        
-        return true;
-    }
-
-    /**
-     * REST API endpoint to get meeting link
-     * 
-     * @param WP_REST_Request $request
-     * @return WP_REST_Response|WP_Error
-     */
-    public function rest_get_meeting_link( $request ) {
-        $booking_id = (int) $request['booking_id'];
-        $user_id = get_current_user_id();
-        
-        try {
-            // Get booking data
-            $booking = $this->get_booking_data( $booking_id );
-            if ( ! $booking ) {
-                return new WP_Error( 'booking_not_found', __( 'Booking not found.', 'hydra-booking-customization' ), array( 'status' => 404 ) );
-            }
-            
-            // Check booking status
-            if ( $booking->status !== 'confirmed' ) {
-                return new WP_Error( 'booking_not_confirmed', __( 'Meeting is only available for confirmed bookings.', 'hydra-booking-customization' ), array( 'status' => 400 ) );
-            }
-            
-            // Get meeting data
-            $meeting_data = $this->get_meeting_data( $booking_id );
-            if ( ! $meeting_data ) {
-                return new WP_Error( 'meeting_not_found', __( 'Meeting link not found for this booking.', 'hydra-booking-customization' ), array( 'status' => 404 ) );
-            }
-            
-            // Check meeting timing (5 minutes before to end time)
-            $current_time = current_time( 'timestamp' );
-            $meeting_start = strtotime( $booking->meeting_dates . ' ' . $booking->start_time );
-            $meeting_end = strtotime( $booking->meeting_dates . ' ' . $booking->end_time );
-            $five_minutes_before = $meeting_start - ( 5 * 60 );
-            
-            // Check if testing mode is enabled to bypass time restrictions
-			$testing_mode = ( HBC_TEST_MODE_STATUS === 'active' );
-            
-            if ( ! $testing_mode ) {
-                // Only enforce time restrictions when testing mode is disabled
-                if ( $current_time < $five_minutes_before ) {
-                    return new WP_Error( 'meeting_not_available', __( 'Meeting will be available 5 minutes before the scheduled time.', 'hydra-booking-customization' ), array( 'status' => 400 ) );
-                }
-                
-                if ( $current_time > $meeting_end ) {
-                    return new WP_Error( 'meeting_ended', __( 'This meeting has ended.', 'hydra-booking-customization' ), array( 'status' => 400 ) );
-                }
-            }
-            
-            // Determine user role
-            $user_role = $this->get_user_role_in_meeting( $booking_id, $user_id );
-            
-            // Generate secure meeting URL
-            $secure_meeting_url = $this->generate_secure_meeting_url( $booking_id, $user_id, $user_role );
-            
-            if ( ! $secure_meeting_url ) {
-                return new WP_Error( 'meeting_link_generation_failed', __( 'Failed to generate meeting link.', 'hydra-booking-customization' ), array( 'status' => 500 ) );
-            }
-            
-            return rest_ensure_response( array(
-                'status' => true,
-                'meeting_url' => $secure_meeting_url,
-                'room_name' => $meeting_data['room_name'],
-                'role' => $user_role,
-                'booking_id' => $booking_id,
-                'meeting_start' => $meeting_start,
-                'meeting_end' => $meeting_end,
-                'testing_mode' => $testing_mode
-            ) );
-            
-        } catch ( \Exception $e ) {
-            error_log( 'Jitsi REST API Error: ' . $e->getMessage() );
-            return new WP_Error( 'internal_error', __( 'An internal error occurred.', 'hydra-booking-customization' ), array( 'status' => 500 ) );
-        }
-    }
-
-    /**
-     * Check if user has access to booking
+     * Check if user has access to booking.
+     *
+     * Public so child classes can access it.
      * 
      * @param int $user_id
      * @param int $booking_id
      * @return bool
      */
-    private function user_has_booking_access( $user_id, $booking_id ) {
+    public function user_has_booking_access( $user_id, $booking_id ) {
         global $wpdb;
         
         $bookings_table = $wpdb->prefix . 'tfhb_bookings';
@@ -759,7 +652,7 @@ class JitsiIntegration {
      */
     public function create_missing_meeting_links() {
         if ( ! $this->is_jitsi_plugin_active() ) {
-            error_log( 'HBC Jitsi Integration: Jitsi Meet plugin is not active' );
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) { error_log( 'HBC Jitsi Integration: Jitsi Meet plugin is not active' ); }
             return;
         }
 
@@ -783,7 +676,7 @@ class JitsiIntegration {
         $bookings = $wpdb->get_results( $query );
         
         if ( empty( $bookings ) ) {
-            error_log( 'HBC Jitsi Integration: No bookings found that need meeting links' );
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) { error_log( 'HBC Jitsi Integration: No bookings found that need meeting links' ); }
             return;
         }
         
@@ -793,50 +686,12 @@ class JitsiIntegration {
             $created_count++;
         }
         
-        error_log( "HBC Jitsi Integration: Created meeting links for {$created_count} existing bookings" );
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) { error_log( "HBC Jitsi Integration: Created meeting links for {$created_count} existing bookings" ); }
         
         return $created_count;
     }
 
-    /**
-     * Add rewrite rule for custom meeting page
-     */
-    public function add_meeting_page_rewrite_rule() {
-        add_rewrite_rule(
-            '^meeting/([^/]+)/?$',
-            'index.php?hbc_meeting_token=$matches[1]',
-            'top'
-        );
-        
-        // Set flag to flush rewrite rules on next page load
-        if ( ! get_option( 'hbc_rewrite_rules_added' ) ) {
-            update_option( 'hbc_flush_rewrite_rules', true );
-            update_option( 'hbc_rewrite_rules_added', true );
-        }
-    }
-
-    /**
-     * Add query vars for meeting page
-     * 
-     * @param array $vars
-     * @return array
-     */
-    public function add_meeting_query_vars( $vars ) {
-        $vars[] = 'hbc_meeting_token';
-        return $vars;
-    }
-
-    /**
-     * Handle meeting page request
-     */
-    public function handle_meeting_page_request() {
-        $meeting_token = get_query_var( 'hbc_meeting_token' );
-        
-        if ( ! empty( $meeting_token ) ) {
-            $this->display_meeting_page( $meeting_token );
-            exit;
-        }
-    }
+    // Page routing (rewrite rules, query vars, handle_request) is now handled by MeetingPage class.
 
     /**
      * Generate secure access token for meeting
@@ -950,15 +805,16 @@ class JitsiIntegration {
     }
 
     /**
-     * Validate meeting token
-     * 
+     * Validate meeting token.
+     *
      * Validates a meeting token for authenticity, expiration, and user permissions.
-     * 
-     * @param string $token The token to validate
-     * @return array|\WP_Error Token data on success, WP_Error on failure
+     * Public so child classes (MeetingPage) can access it.
+     *
+     * @param string $token The token to validate.
+     * @return array|\WP_Error Token data on success, WP_Error on failure.
      * @since 1.0.0
      */
-    private function validate_meeting_token( $token ) {
+    public function validate_meeting_token( $token ) {
         // Validate token format
         if ( empty( $token ) || ! is_string( $token ) ) {
             return new \WP_Error( 'invalid_token_format', __( 'Invalid token format provided.', 'hydra-booking-customization' ) );
@@ -1003,7 +859,7 @@ class JitsiIntegration {
             $current_hash = $this->get_user_agent_hash();
             if ( $token_data['user_agent_hash'] !== $current_hash ) {
                 // Log suspicious activity but don't fail completely
-                error_log( 'Jitsi Integration: User agent mismatch for token validation' );
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) { error_log( 'Jitsi Integration: User agent mismatch for token validation' ); }
             }
         }
         
@@ -1063,202 +919,24 @@ class JitsiIntegration {
         return $token_data;
     }
 
-    /**
-     * Display secure meeting page
-     * 
-     * Handles the main meeting page display logic with proper error handling
-     * and meeting status management.
-     * 
-     * @param string $token The meeting token
-     * @since 1.0.0
-     */
-    private function display_meeting_page( $token ) {
-        // Validate the meeting token
-        $token_data = $this->validate_meeting_token( $token );
-        
-        if ( is_wp_error( $token_data ) ) {
-            $this->display_error_page( 
-                __( 'Invalid Meeting Link', 'hydra-booking-customization' ),
-                $token_data->get_error_message(),
-                $token_data->get_error_code()
-            );
-            return;
-        }
-        
-        $booking_id = (int) $token_data['booking_id'];
-        $token_user_id = (int) $token_data['user_id'];
-        $role = sanitize_text_field( $token_data['role'] );
-        
-        // Check if user is logged in
-        $current_user_id = get_current_user_id();
-        if ( ! $current_user_id ) {
-            $this->display_error_page(
-                __( 'Authentication Required', 'hydra-booking-customization' ),
-                __( 'You must be logged in to access this meeting. Please log in and try again.', 'hydra-booking-customization' ),
-                'authentication_required'
-            );
-            return;
-        }
-        
-        // Verify that the logged-in user matches the token user
-        if ( $current_user_id !== $token_user_id ) {
-            $this->display_error_page(
-                __( 'Access Denied', 'hydra-booking-customization' ),
-                __( 'This meeting link is not valid for your account. Please use the correct meeting link for your account.', 'hydra-booking-customization' ),
-                'user_mismatch'
-            );
-            return;
-        }
-        
-        // Get booking and meeting data
-        $booking = $this->get_booking_data( $booking_id );
-        $meeting_data = $this->get_meeting_data( $booking_id );
-        
-        if ( ! $booking || ! $meeting_data ) {
-            $this->display_error_page(
-                __( 'Meeting Not Found', 'hydra-booking-customization' ),
-                __( 'The requested meeting could not be found or has been removed.', 'hydra-booking-customization' ),
-                'meeting_not_found'
-            );
-            return;
-        }
-        
-        // Determine meeting status and display appropriate interface
-        $meeting_status = $this->get_meeting_status( $booking );
-        
-        switch ( $meeting_status ) {
-            case 'waiting':
-                $meeting_start = strtotime( $booking->meeting_dates . ' ' . $booking->start_time );
-                $this->display_waiting_page( $booking, $meeting_start );
-                break;
-                
-            case 'ended':
-                $this->display_ended_page( $booking );
-                break;
-                
-            case 'active':
-            case 'joinable':
-                $this->display_meeting_interface( $booking, $meeting_data, $current_user_id, $role );
-                break;
-                
-            default:
-                $this->display_error_page(
-                    __( 'Meeting Status Error', 'hydra-booking-customization' ),
-                    __( 'Unable to determine meeting status. Please try again later.', 'hydra-booking-customization' ),
-                    'status_error'
-                );
-        }
-    }
+    // Display methods (display_meeting_page, get_meeting_status, display_error_page) are now handled by MeetingPage class.
 
     /**
-     * Get meeting status based on current time and booking schedule
-     * 
-     * @param object $booking The booking object
-     * @return string Meeting status (waiting|joinable|active|ended)
-     * @since 1.0.0
-     */
-    private function get_meeting_status( $booking ) {
-        $meeting_start = strtotime( $booking->meeting_dates . ' ' . $booking->start_time );
-        $meeting_end = strtotime( $booking->meeting_dates . ' ' . $booking->end_time );
-        $current_time = current_time( 'timestamp' );
-        
-        // Check if meeting has been manually terminated
-        $meeting_data = $this->get_meeting_data( $booking->booking_id );
-        if ( $meeting_data && isset( $meeting_data['terminated'] ) && $meeting_data['terminated'] ) {
-            return 'ended';
-        }
-        
-        // Check if testing mode is enabled to bypass time restrictions
-		$testing_mode = ( HBC_TEST_MODE_STATUS === 'active' );
-        if ( $testing_mode ) {
-            // In testing mode, always return 'active' to allow immediate access
-            return 'active';
-        }
-        
-        // Allow joining 15 minutes before start time
-        $join_time = $meeting_start - self::MEETING_GRACE_PERIOD;
-        
-        if ( $current_time < $join_time ) {
-            return 'waiting';
-        } elseif ( $current_time >= $join_time && $current_time < $meeting_start ) {
-            return 'joinable';
-        } elseif ( $current_time >= $meeting_start && $current_time <= $meeting_end ) {
-            return 'active';
-        } else {
-            return 'ended';
-        }
-    }
-
-    /**
-     * Display error page for meeting access issues
-     * 
-     * @param string $title Error title
-     * @param string $message Error message
-     * @param string $code Error code
-     * @since 1.0.0
-     */
-    private function display_error_page( $title, $message, $code = '' ) {
-        // Log the error for debugging
-        error_log( sprintf( 'Jitsi Integration Error [%s]: %s', $code, $message ) );
-        
-        ?><!DOCTYPE html>
-        <html <?php language_attributes(); ?>>
-        <head>
-            <meta charset="<?php bloginfo( 'charset' ); ?>">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title><?php echo esc_html( $title ); ?> - <?php bloginfo( 'name' ); ?></title>
-            <?php wp_head(); ?>
-            <style>
-                body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f5f5f5; }
-                .error-container { max-width: 600px; margin: 0 auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-                .error-title { color: #d63638; margin-bottom: 20px; font-size: 24px; }
-                .error-message { color: #666; font-size: 16px; line-height: 1.5; margin-bottom: 30px; }
-                .error-actions { margin-top: 30px; }
-                .button { display: inline-block; padding: 12px 24px; background: #0073aa; color: white; text-decoration: none; border-radius: 4px; margin: 0 10px; }
-                .button:hover { background: #005a87; color: white; text-decoration: none; }
-                .error-code { font-size: 12px; color: #999; margin-top: 20px; }
-            </style>
-        </head>
-        <body>
-            <div class="error-container">
-                <h1 class="error-title"><?php echo esc_html( $title ); ?></h1>
-                <div class="error-message">
-                    <p><?php echo esc_html( $message ); ?></p>
-                </div>
-                <div class="error-actions">
-                    <a href="<?php echo esc_url( home_url() ); ?>" class="button">
-                        <?php _e( 'Go to Homepage', 'hydra-booking-customization' ); ?>
-                    </a>
-                    <a href="javascript:history.back()" class="button">
-                        <?php _e( 'Go Back', 'hydra-booking-customization' ); ?>
-                    </a>
-                </div>
-                <?php if ( $code ): ?>
-                    <div class="error-code">
-                        <?php printf( __( 'Error Code: %s', 'hydra-booking-customization' ), esc_html( $code ) ); ?>
-                    </div>
-                <?php endif; ?>
-            </div>
-            <?php wp_footer(); ?>
-        </body>
-        </html><?php
-        exit;
-    }
-
-    /**
-     * Get booking data
+     * Get booking data.
+     *
+     * Public so child classes can access it.
      * 
      * @param int $booking_id
      * @return object|null
      */
-    private function get_booking_data( $booking_id ) {
+    public function get_booking_data( $booking_id ) {
         global $wpdb;
         
         $bookings_table = $wpdb->prefix . 'tfhb_bookings';
         $meetings_table = $wpdb->prefix . 'tfhb_meetings';
         
         $query = $wpdb->prepare(
-            "SELECT b.*, m.title as meeting_title, m.duration 
+            "SELECT b.*, m.title as meeting_title 
              FROM {$bookings_table} b 
              LEFT JOIN {$meetings_table} m ON b.meeting_id = m.id 
              WHERE b.id = %d",
@@ -1268,519 +946,8 @@ class JitsiIntegration {
         return $wpdb->get_row( $query );
     }
 
-    /**
-     * Display waiting page when meeting hasn't started
-     * 
-     * @param object $booking
-     * @param int $meeting_start
-     */
-    private function display_waiting_page( $booking, $meeting_start ) {
-        $meeting_time = date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $meeting_start );
-        $testing_mode = ( HBC_TEST_MODE_STATUS === 'active' );
-        
-        ?><!DOCTYPE html>
-        <html <?php language_attributes(); ?>>
-        <head>
-            <meta charset="<?php bloginfo( 'charset' ); ?>">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title><?php echo esc_html( $booking->meeting_title ); ?> - <?php bloginfo( 'name' ); ?></title>
-            <?php wp_head(); ?>
-            <style>
-                body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f5f5f5; }
-                .waiting-container { max-width: 600px; margin: 0 auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-                .meeting-title { color: #333; margin-bottom: 20px; }
-                .countdown { font-size: 24px; color: #0073aa; margin: 20px 0; }
-                .meeting-info { background: #f9f9f9; padding: 20px; border-radius: 5px; margin: 20px 0; }
-                .testing-mode { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
-            </style>
-        </head>
-        <body>
-            <div class="waiting-container">
-                <h1 class="meeting-title"><?php echo esc_html( $booking->meeting_title ); ?></h1>
-                <p><?php _e( 'Your meeting will start at:', 'hydra-booking-customization' ); ?></p>
-                <div class="countdown"><?php echo esc_html( $meeting_time ); ?></div>
-                <div class="meeting-info <?php echo $testing_mode ? 'testing-mode' : ''; ?>">
-                    <?php if ( $testing_mode ) : ?>
-                        <p><?php _e( 'TESTING MODE: Meeting access restrictions have been bypassed. You can join immediately.', 'hydra-booking-customization' ); ?></p>
-                    <?php else : ?>
-                        <p><?php _e( 'Please keep this page open and refresh it closer to the meeting time.', 'hydra-booking-customization' ); ?></p>
-                    <?php endif; ?>
-                </div>
-                <button onclick="location.reload()" class="button"><?php _e( 'Refresh Page', 'hydra-booking-customization' ); ?></button>
-            </div>
-            <?php wp_footer(); ?>
-        </body>
-        </html><?php
-    }
+    // Remaining display methods (display_waiting_page, display_ended_page, display_meeting_interface) are now handled by MeetingPage class.
 
-    /**
-     * Display ended page when meeting has finished
-     * 
-     * @param object $booking
-     */
-    private function display_ended_page( $booking ) {
-        ?><!DOCTYPE html>
-        <html <?php language_attributes(); ?>>
-        <head>
-            <meta charset="<?php bloginfo( 'charset' ); ?>">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title><?php echo esc_html( $booking->meeting_title ); ?> - <?php bloginfo( 'name' ); ?></title>
-            <?php wp_head(); ?>
-            <style>
-                body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f5f5f5; }
-                .ended-container { max-width: 600px; margin: 0 auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-                .meeting-title { color: #333; margin-bottom: 20px; }
-                .ended-message { color: #666; font-size: 18px; }
-            </style>
-        </head>
-        <body>
-            <div class="ended-container">
-                <h1 class="meeting-title"><?php echo esc_html( $booking->meeting_title ); ?></h1>
-                <div class="ended-message">
-                    <p><?php _e( 'This meeting has ended.', 'hydra-booking-customization' ); ?></p>
-                    <p><?php _e( 'Thank you for participating!', 'hydra-booking-customization' ); ?></p>
-                </div>
-            </div>
-            <?php wp_footer(); ?>
-        </body>
-        </html><?php
-    }
-
-    /**
-     * Display meeting interface with embedded Jitsi
-     * 
-     * @param object $booking
-     * @param array $meeting_data
-     * @param int $user_id
-     * @param string $role
-     */
-    private function display_meeting_interface( $booking, $meeting_data, $user_id, $role ) {
-        $user = get_user_by( 'id', $user_id );
-        $display_name = $user ? $user->display_name : 'Guest';
-        
-        ?><!DOCTYPE html>
-        <html <?php language_attributes(); ?>>
-        <head>
-            <meta charset="<?php bloginfo( 'charset' ); ?>">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title><?php echo esc_html( $booking->meeting_title ); ?> - <?php bloginfo( 'name' ); ?></title>
-            <?php wp_head(); ?>
-            <style>
-                body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
-                .meeting-header { background: #0073aa; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
-                .meeting-title { margin: 0; font-size: 18px; }
-                .meeting-timer { font-size: 16px; font-weight: bold; margin-right: 20px; padding: 5px 10px; background: rgba(255,255,255,0.2); border-radius: 5px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-                .timer-elapsed { font-family: 'Courier New', monospace; }
-                .timer-duration { font-family: 'Noto Sans Bengali', Arial, sans-serif; font-size: 12px; opacity: 0.9; }
-                .meeting-timer.overtime { background: #ff4444; animation: pulse 1s infinite; }
-                .user-info { font-size: 14px; }
-                #jitsi-container { width: 100%; height: calc(100vh - 60px); }
-                .loading { text-align: center; padding: 50px; }
-                @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
-                
-                /* Bengali Popup Notification Styles */
-                .meeting-notification-overlay {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background: rgba(0, 0, 0, 0.7);
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    z-index: 10000;
-                    font-family: 'Noto Sans Bengali', Arial, sans-serif;
-                }
-                .meeting-notification {
-                    background: white;
-                    padding: 30px;
-                    border-radius: 10px;
-                    text-align: center;
-                    max-width: 400px;
-                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-                }
-                .meeting-notification h2 {
-                    color: #d32f2f;
-                    margin-bottom: 15px;
-                    font-size: 24px;
-                }
-                .meeting-notification p {
-                    font-size: 18px;
-                    margin-bottom: 20px;
-                    color: #333;
-                }
-                .meeting-notification button {
-                    background: #0073aa;
-                    color: white;
-                    border: none;
-                    padding: 10px 20px;
-                    border-radius: 5px;
-                    cursor: pointer;
-                    font-size: 16px;
-                }
-                .meeting-notification button:hover {
-                    background: #005a87;
-                }
-            </style>
-            <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
-        </head>
-        <body>
-            <div class="meeting-header">
-                <h1 class="meeting-title"><?php echo esc_html( $booking->meeting_title ); ?></h1>
-                <div class="timer-duration">সময়কাল <?php echo intval( $booking->duration ?? 30 ); ?> min</div>
-                <div style="display: flex; align-items: center;">
-                    <div class="meeting-timer" id="meeting-timer">
-                    <div class="timer-elapsed">00:00</div>
-                </div>
-                    <div class="user-info">
-                        <?php printf( __( 'Welcome, %s', 'hydra-booking-customization' ), esc_html( $display_name ) ); ?>
-                        <?php if ( $role === 'host' ): ?>
-                            <span class="host-badge"><?php _e( '(Host)', 'hydra-booking-customization' ); ?></span>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </div>
-            <div id="jitsi-container">
-                <div class="loading"><?php _e( 'Loading meeting...', 'hydra-booking-customization' ); ?></div>
-            </div>
-            
-            <?php
-            // Load appropriate Jitsi External API first
-            $jitsi_config = $this->get_jitsi_config();
-            if ( $jitsi_config['api_select'] === 'jaas' ) {
-                echo '<script src="https://8x8.vc/external_api.js"></script>';
-            } else {
-                echo '<script src="https://' . esc_attr( $meeting_data['domain'] ) . '/external_api.js"></script>';
-            }
-            
-            // Load toast notification script for vanilla JS environment
-            echo '<script src="' . HBC_PLUGIN_URL . 'src/utils/toast-notifications.js"></script>';
-            ?>
-            
-            <script>
-                // Meeting timer and notification system
-                const bookingId = '<?php echo esc_js( $booking->id ?? 'default' ); ?>';
-                const storageKey = 'meeting_start_time_' + bookingId;
-                let meetingStartTime;
-                let meetingDuration = <?php echo intval( $booking->duration ?? 30 ); ?> * 60 * 1000; // Convert minutes to milliseconds
-                let timerInterval;
-                let notificationShown = false;
-                
-                // Actual scheduled meeting times from booking data
-                const scheduledMeetingDate = '<?php echo esc_js( $booking->meeting_dates ?? '' ); ?>';
-                const scheduledStartTime = '<?php echo esc_js( $booking->start_time ?? '' ); ?>';
-                const scheduledEndTime = '<?php echo esc_js( $booking->end_time ?? '' ); ?>';
-                
-                // Calculate actual meeting end time from scheduled data
-                let actualMeetingEndTime = null;
-                if (scheduledMeetingDate && scheduledEndTime) {
-                    actualMeetingEndTime = new Date(scheduledMeetingDate + ' ' + scheduledEndTime);
-                } else if (scheduledMeetingDate && scheduledStartTime) {
-                    // Fallback: calculate end time from start time + duration
-                    const startDateTime = new Date(scheduledMeetingDate + ' ' + scheduledStartTime);
-                    actualMeetingEndTime = new Date(startDateTime.getTime() + meetingDuration);
-                }
-                
-                // Initialize or retrieve meeting start time
-                function initializeMeetingTime() {
-                    const storedStartTime = localStorage.getItem(storageKey);
-                    if (storedStartTime) {
-                        meetingStartTime = new Date(parseInt(storedStartTime));
-                    } else {
-                        meetingStartTime = new Date();
-                        localStorage.setItem(storageKey, meetingStartTime.getTime().toString());
-                    }
-                }
-                
-                function updateTimer() {
-                    const now = new Date();
-                    const elapsed = now - meetingStartTime;
-                    const minutes = Math.floor(elapsed / 60000);
-                    const seconds = Math.floor((elapsed % 60000) / 1000);
-                    
-                    const timerElement = document.getElementById('meeting-timer');
-                     const elapsedElement = timerElement.querySelector('.timer-elapsed');
-                     const formattedTime = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
-                     elapsedElement.textContent = formattedTime;
-                    
-                    // Check if actual meeting time has expired (current time > scheduled end time)
-                    let shouldShowExpiredNotification = false;
-                    
-                    if (actualMeetingEndTime) {
-                        // Use actual scheduled end time
-                        shouldShowExpiredNotification = now > actualMeetingEndTime;
-                    } else {
-                        // Fallback to duration-based check if scheduled times are not available
-                        shouldShowExpiredNotification = elapsed >= meetingDuration;
-                    }
-                    
-                    if (shouldShowExpiredNotification && !notificationShown) {
-                        timerElement.classList.add('overtime');
-                        showMeetingEndNotification();
-                        notificationShown = true;
-                    }
-                }
-                
-                function showMeetingEndNotification() {
-                    const overlay = document.createElement('div');
-                    overlay.className = 'meeting-notification-overlay';
-                    overlay.innerHTML = `
-                        <div class="meeting-notification">
-                            <h2>মিটিংয়ের সময় শেষ</h2>
-                            <p>মিটিংয়ের সময় শেষ হয়েছে</p>
-                            <button onclick="closeMeetingNotification()">ঠিক আছে</button>
-                        </div>
-                    `;
-                    document.body.appendChild(overlay);
-                    
-                    // Auto-close after 10 seconds if not manually closed
-                    setTimeout(() => {
-                        if (document.body.contains(overlay)) {
-                            overlay.remove();
-                        }
-                    }, 10000);
-                }
-                
-                function closeMeetingNotification() {
-                     const overlay = document.querySelector('.meeting-notification-overlay');
-                     if (overlay) {
-                         overlay.remove();
-                     }
-                 }
-                 
-                 // Make function globally accessible
-                 window.closeMeetingNotification = closeMeetingNotification;
-                
-                // Start timer when page loads
-                function startMeetingTimer() {
-                    initializeMeetingTime();
-                    timerInterval = setInterval(updateTimer, 1000);
-                    updateTimer(); // Initial call
-                }
-                
-                // Reset timer for new meeting session
-                function resetMeetingTimer() {
-                    localStorage.removeItem(storageKey);
-                    initializeMeetingTime();
-                    notificationShown = false;
-                    const timerElement = document.getElementById('meeting-timer');
-                    if (timerElement) {
-                        timerElement.classList.remove('overtime');
-                    }
-                }
-                
-                document.addEventListener('DOMContentLoaded', function() {
-                    // Start the meeting timer
-                    startMeetingTimer();
-                    // Browser compatibility check
-                    function checkBrowserCompatibility() {
-                        const userAgent = navigator.userAgent;
-                        const isChrome = /Chrome/.test(userAgent) && /Google Inc/.test(navigator.vendor);
-                        const isFirefox = /Firefox/.test(userAgent);
-                        const isSafari = /Safari/.test(userAgent) && /Apple Computer/.test(navigator.vendor);
-                        const isEdge = /Edg/.test(userAgent);
-                        
-                        // Check for required features
-                        const hasWebRTC = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-                        const hasWebSocket = !!window.WebSocket;
-                        
-                        return {
-                            isSupported: (isChrome || isFirefox || isSafari || isEdge) && hasWebRTC && hasWebSocket,
-                            browser: isChrome ? 'Chrome' : isFirefox ? 'Firefox' : isSafari ? 'Safari' : isEdge ? 'Edge' : 'Unknown',
-                            hasWebRTC: hasWebRTC,
-                            hasWebSocket: hasWebSocket
-                        };
-                    }
-                    
-                    const browserInfo = checkBrowserCompatibility();
-                    // Browser compatibility checked
-                    
-                    // Wait for Jitsi External API to load with timeout
-                    let apiCheckAttempts = 0;
-                    const maxAttempts = 10;
-                    
-                    function waitForJitsiAPI() {
-                        if (typeof JitsiMeetExternalAPI !== 'undefined') {
-                            initializeJitsi();
-                        } else if (apiCheckAttempts < maxAttempts) {
-                            apiCheckAttempts++;
-                            setTimeout(waitForJitsiAPI, 500);
-                        } else {
-                            console.error('Jitsi Meet External API failed to load after multiple attempts');
-                            if (window.ToastNotifications) {
-                                window.ToastNotifications.showError('Failed to load meeting interface. Please refresh the page.');
-                            }
-                            showFallbackMessage();
-                        }
-                    }
-                    
-                    function showFallbackMessage() {
-                        const fallbackHTML = `
-                            <div class="loading" style="padding: 40px; text-align: center;">
-                                <h3>Unable to load meeting interface</h3>
-                                <p>Please try one of the following:</p>
-                                <ul style="text-align: left; display: inline-block;">
-                                    <li>Refresh this page</li>
-                                    <li>Check your internet connection</li>
-                                    <li>Try using a different browser (Chrome, Firefox, Safari, or Edge)</li>
-                                    <li>Disable browser extensions temporarily</li>
-                                </ul>
-                                <p><a href="<?php echo esc_js( $meeting_data['meeting_url'] ); ?>" target="_blank" class="button">Open in new tab</a></p>
-                                <button onclick="location.reload()" class="button">Refresh Page</button>
-                            </div>
-                        `;
-                        document.querySelector('#jitsi-container').innerHTML = fallbackHTML;
-                    }
-                    
-                    function initializeJitsi() {
-                         if (!browserInfo.isSupported) {
-                             console.warn('Browser may not be fully supported, but attempting to load Jitsi anyway');
-                         }
-                     
-                         const domain = '<?php echo esc_js( $meeting_data['domain'] ); ?>';
-                         const roomName = '<?php echo esc_js( $meeting_data['room_name'] ); ?>';
-                         const displayName = '<?php echo esc_js( $display_name ); ?>';
-                         const userRole = '<?php echo esc_js( $role ); ?>';
-                    
-                    const options = {
-                        roomName: roomName,
-                        width: '100%',
-                        height: '100%',
-                        parentNode: document.querySelector('#jitsi-container'),
-                        userInfo: {
-                            displayName: displayName
-                        },
-                        configOverwrite: {
-                            startWithAudioMuted: true,
-                            startWithVideoMuted: false,
-                            enableWelcomePage: false,
-                            prejoinPageEnabled: false,
-                            disableDeepLinking: true,
-                            enableClosePage: false,
-                            // Modern browser compatibility settings
-                            constraints: {
-                                video: {
-                                    aspectRatio: 16 / 9,
-                                    height: {
-                                        ideal: 720,
-                                        max: 720,
-                                        min: 240
-                                    }
-                                }
-                            },
-                            // Disable features that might cause compatibility issues
-                            disableH264: false,
-                            enableLayerSuspension: true,
-                            channelLastN: -1,
-                            // Browser compatibility
-                            enableInsecureRoomNameWarning: false,
-                            enableLobbyChat: false
-                        },
-                        interfaceConfigOverwrite: {
-                            TOOLBAR_BUTTONS: [
-                                'microphone', 'camera', 'closedcaptions', 'desktop', 'fullscreen',
-                                'fodeviceselection', 'hangup', 'profile', 'chat', 'recording',
-                                'livestreaming', 'etherpad', 'sharedvideo', 'settings', 'raisehand',
-                                'videoquality', 'filmstrip', 'invite', 'feedback', 'stats', 'shortcuts',
-                                'tileview', 'videobackgroundblur', 'download', 'help', 'mute-everyone'
-                            ],
-                            SETTINGS_SECTIONS: ['devices', 'language', 'moderator', 'profile', 'calendar'],
-                            SHOW_JITSI_WATERMARK: false,
-                            SHOW_WATERMARK_FOR_GUESTS: false,
-                            SHOW_BRAND_WATERMARK: false,
-                            BRAND_WATERMARK_LINK: '',
-                            SHOW_POWERED_BY: false,
-                            SHOW_PROMOTIONAL_CLOSE_PAGE: false,
-                            SHOW_CHROME_EXTENSION_BANNER: false
-                        }
-                    };
-                    
-                    // Set moderator rights for host
-                    if (userRole === 'host') {
-                        options.configOverwrite.startAudioMuted = 0;
-                        options.configOverwrite.startVideoMuted = 0;
-                    }
-                    
-                    try {
-                        const api = new JitsiMeetExternalAPI(domain, options);
-                        
-                        // Handle meeting events
-                        api.addEventListener('readyToClose', function() {
-                            // Stop the timer when meeting ends
-                            if (timerInterval) {
-                                clearInterval(timerInterval);
-                            }
-                            if (window.opener) {
-                                window.close();
-                            } else {
-                                window.location.href = '<?php echo esc_url( home_url() ); ?>';
-                            }
-                        });
-                        
-                        api.addEventListener('participantLeft', function(event) {
-                            // Participant left event
-                            if (window.ToastNotifications) {
-                                window.ToastNotifications.showInfo('A participant left the meeting');
-                            }
-                        });
-                        
-                        api.addEventListener('participantJoined', function(event) {
-                            // Participant joined event
-                            if (window.ToastNotifications) {
-                                window.ToastNotifications.showInfo('A participant joined the meeting');
-                            }
-                        });
-                        
-                        // Handle video conference errors
-                        api.addEventListener('videoConferenceLeft', function(event) {
-                            // Video conference left event
-                        });
-                        
-                        api.addEventListener('videoConferenceJoined', function(event) {
-                            // Video conference joined event - synchronize timer
-                            // Check if this is a fresh meeting session
-                            const storedStartTime = localStorage.getItem(storageKey);
-                            const now = new Date();
-                            
-                            // If stored time is more than 5 minutes old, consider it a new session
-                            if (storedStartTime) {
-                                const timeDiff = now.getTime() - parseInt(storedStartTime);
-                                if (timeDiff > 5 * 60 * 1000) { // 5 minutes
-                                    resetMeetingTimer();
-                                }
-                            }
-                        });
-                        
-                        // Remove loading message once API is ready
-                        api.addEventListener('videoConferenceJoined', function() {
-                            const loadingDiv = document.querySelector('#jitsi-container .loading');
-                            if (loadingDiv) {
-                                loadingDiv.remove();
-                            }
-                            if (window.ToastNotifications) {
-                                window.ToastNotifications.showSuccess('Successfully joined the meeting!');
-                            }
-                        });
-                        
-                    } catch (error) {
-                             console.error('Error initializing Jitsi Meet:', error);
-                             if (window.ToastNotifications) {
-                                 window.ToastNotifications.showError('Unable to initialize meeting. Please check your browser compatibility and try again.');
-                             }
-                             document.querySelector('#jitsi-container').innerHTML = '<div class="loading">Error: Unable to initialize meeting. Please check your browser compatibility and try again.</div>';
-                         }
-                     }
-                     
-                     // Start the API loading check
-                     waitForJitsiAPI();
-                 });
-             </script>
-            
-            <?php wp_footer(); ?>
-        </body>
-        </html><?php
-    }
 
     /**
      * Generate secure meeting URL with token
@@ -1802,7 +969,7 @@ class JitsiIntegration {
         $token = $this->generate_meeting_token( $booking_id, $user_id, $role );
         
         if ( is_wp_error( $token ) ) {
-            error_log( 'Failed to generate meeting token: ' . $token->get_error_message() );
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) { error_log( 'Failed to generate meeting token: ' . $token->get_error_message() ); }
             return false;
         }
         
@@ -1870,235 +1037,5 @@ class JitsiIntegration {
         return $token_data['token'];
     }
 
-    /**
-     * Initialize cron jobs for meeting management
-     * 
-     * @since 1.0.0
-     */
-    private function init_cron_jobs() {
-        // Schedule cron jobs on plugin activation if not already scheduled
-        if ( ! wp_next_scheduled( 'hbc_check_meeting_reminders' ) ) {
-            wp_schedule_event( time(), 'every_minute', 'hbc_check_meeting_reminders' );
-        }
-        
-        if ( ! wp_next_scheduled( 'hbc_cleanup_expired_meetings' ) ) {
-            wp_schedule_event( time(), 'hourly', 'hbc_cleanup_expired_meetings' );
-        }
-        
-        // Hook the cron actions
-        add_action( 'hbc_check_meeting_reminders', array( $this, 'check_meeting_reminders' ) );
-        add_action( 'hbc_cleanup_expired_meetings', array( $this, 'cleanup_all_expired_meetings' ) );
-        
-        // Add custom cron schedule for every minute
-        add_filter( 'cron_schedules', array( $this, 'add_cron_schedules' ) );
-    }
-
-    /**
-     * Add custom cron schedules
-     * 
-     * @param array $schedules
-     * @return array
-     */
-    public function add_cron_schedules( $schedules ) {
-        $schedules['every_minute'] = array(
-            'interval' => 60,
-            'display'  => __( 'Every Minute', 'hydra-booking-customization' )
-        );
-        return $schedules;
-    }
-
-    /**
-     * Check for meetings that need reminders
-     * 
-     * @since 1.0.0
-     */
-    public function check_meeting_reminders() {
-        global $wpdb;
-        
-        $bookings_table = $wpdb->prefix . 'tfhb_bookings';
-        $meta_table = $wpdb->prefix . 'tfhb_booking_meta';
-        
-        // Get meetings that end in 5 minutes and haven't been reminded yet
-        $current_time = current_time( 'mysql' );
-        $reminder_time = gmdate( 'Y-m-d H:i:s', strtotime( $current_time ) + self::REMINDER_TIME_BEFORE_END );
-        
-        $query = $wpdb->prepare(
-            "SELECT b.id as booking_id, b.meeting_dates, b.start_time, b.end_time, b.attendee_email, b.attendee_name
-             FROM {$bookings_table} b
-             LEFT JOIN {$meta_table} m ON b.id = m.booking_id AND m.meta_key = 'reminder_sent'
-             WHERE b.status = 'confirmed'
-             AND CONCAT(b.meeting_dates, ' ', b.end_time) BETWEEN %s AND %s
-             AND m.booking_id IS NULL",
-            $current_time,
-            $reminder_time
-        );
-        
-        $meetings = $wpdb->get_results( $query );
-        
-        foreach ( $meetings as $meeting ) {
-            $this->send_meeting_reminder( $meeting->booking_id, $meeting );
-        }
-    }
-
-    /**
-     * Send meeting reminder to participants
-     * 
-     * @param int $booking_id
-     * @param object $booking
-     * @since 1.0.0
-     */
-    public function send_meeting_reminder( $booking_id, $booking ) {
-        global $wpdb;
-        
-        // Mark reminder as sent
-        $meta_table = $wpdb->prefix . 'tfhb_booking_meta';
-        $wpdb->replace(
-            $meta_table,
-            array(
-                'booking_id' => $booking_id,
-                'meta_key' => 'reminder_sent',
-                'value' => current_time( 'mysql' ),
-                'created_at' => current_time( 'mysql' ),
-                'updated_at' => current_time( 'mysql' )
-            ),
-            array( '%d', '%s', '%s', '%s', '%s' )
-        );
-        
-        // Send email reminder
-        $subject = __( 'Meeting Ending Soon - 5 Minutes Remaining', 'hydra-booking-customization' );
-        $message = sprintf(
-            __( 'Hello %s,\n\nYour meeting is scheduled to end in 5 minutes.\n\nMeeting Details:\nDate: %s\nTime: %s - %s\n\nPlease wrap up your discussion.\n\nThank you!', 'hydra-booking-customization' ),
-            $booking->attendee_name,
-            $booking->meeting_dates,
-            $booking->start_time,
-            $booking->end_time
-        );
-        
-        wp_mail( $booking->attendee_email, $subject, $message );
-        
-        // Log the reminder
-        error_log( "HBC Jitsi Integration: Sent 5-minute reminder for booking {$booking_id}" );
-    }
-
-    /**
-     * Cleanup all expired meetings
-     * 
-     * @since 1.0.0
-     */
-    public function cleanup_all_expired_meetings() {
-        global $wpdb;
-        
-        $bookings_table = $wpdb->prefix . 'tfhb_bookings';
-        $current_time = current_time( 'mysql' );
-        
-        // Get meetings that have ended
-        $query = $wpdb->prepare(
-            "SELECT id as booking_id FROM {$bookings_table}
-             WHERE status = 'confirmed'
-             AND CONCAT(meeting_dates, ' ', end_time) < %s",
-            $current_time
-        );
-        
-        $expired_meetings = $wpdb->get_results( $query );
-        
-        foreach ( $expired_meetings as $meeting ) {
-            $this->cleanup_expired_meeting( $meeting->booking_id );
-        }
-    }
-
-    /**
-     * Cleanup expired meeting data
-     * 
-     * @param int $booking_id
-     * @since 1.0.0
-     */
-    public function cleanup_expired_meeting( $booking_id ) {
-        global $wpdb;
-        
-        $meta_table = $wpdb->prefix . 'tfhb_booking_meta';
-        
-        // Mark meeting as terminated in meeting data
-        $meeting_data = $this->get_meeting_data( $booking_id );
-        if ( $meeting_data ) {
-            $meeting_data['terminated'] = true;
-            $meeting_data['terminated_at'] = current_time( 'mysql' );
-            
-            $wpdb->replace(
-                $meta_table,
-                array(
-                    'booking_id' => $booking_id,
-                    'meta_key' => 'jitsi_meeting',
-                    'value' => wp_json_encode( $meeting_data ),
-                    'created_at' => current_time( 'mysql' ),
-                    'updated_at' => current_time( 'mysql' )
-                ),
-                array( '%d', '%s', '%s', '%s', '%s' )
-            );
-        }
-        
-        // Mark meeting as terminated
-        $wpdb->replace(
-            $meta_table,
-            array(
-                'booking_id' => $booking_id,
-                'meta_key' => 'meeting_terminated',
-                'value' => current_time( 'mysql' ),
-                'created_at' => current_time( 'mysql' ),
-                'updated_at' => current_time( 'mysql' )
-            ),
-            array( '%d', '%s', '%s', '%s', '%s' )
-        );
-        
-        // Clean up expired tokens
-        $wpdb->query( $wpdb->prepare(
-            "DELETE FROM {$meta_table} WHERE booking_id = %d AND meta_key LIKE 'meeting_token_%'",
-            $booking_id
-        ) );
-        
-        error_log( "HBC Jitsi Integration: Cleaned up expired meeting {$booking_id}" );
-    }
-
-    /**
-     * Terminate meeting room (placeholder for future Jitsi API integration)
-     * 
-     * @param int $booking_id
-     * @since 1.0.0
-     */
-    public function terminate_meeting_room( $booking_id ) {
-        // This would integrate with Jitsi API to actually terminate the room
-        // For now, we just log the termination
-        error_log( "HBC Jitsi Integration: Meeting room terminated for booking {$booking_id}" );
-        
-        // Mark room as terminated
-        $this->cleanup_expired_meeting( $booking_id );
-    }
-
-    /**
-     * Schedule meeting events (reminders and cleanup) for a specific booking
-     * 
-     * @param object $booking
-     * @since 1.0.0
-     */
-    private function schedule_meeting_events( $booking ) {
-        $meeting_start = strtotime( $booking->meeting_dates . ' ' . $booking->start_time );
-        $meeting_end = strtotime( $booking->meeting_dates . ' ' . $booking->end_time );
-        
-        // Schedule reminder 5 minutes before meeting ends
-        $reminder_time = $meeting_end - self::REMINDER_TIME_BEFORE_END;
-        if ( $reminder_time > time() ) {
-            wp_schedule_single_event( $reminder_time, 'hbc_meeting_reminder', array( $booking->booking_id, $booking ) );
-        }
-        
-        // Schedule cleanup right after meeting ends
-        if ( $meeting_end > time() ) {
-            wp_schedule_single_event( $meeting_end + 60, 'hbc_meeting_cleanup', array( $booking->booking_id ) );
-        }
-        
-        // Schedule room termination at meeting end time
-        if ( $meeting_end > time() ) {
-            wp_schedule_single_event( $meeting_end, 'hbc_meeting_terminate', array( $booking->booking_id ) );
-        }
-        
-        error_log( "HBC Jitsi Integration: Scheduled events for booking {$booking->booking_id} - reminder at " . date( 'Y-m-d H:i:s', $reminder_time ) . ", cleanup at " . date( 'Y-m-d H:i:s', $meeting_end + 60 ) );
-    }
+    // Lifecycle methods (cron, reminders, cleanup) are now handled by MeetingLifecycle class.
 }

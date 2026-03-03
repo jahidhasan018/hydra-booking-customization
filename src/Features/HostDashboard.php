@@ -7,7 +7,7 @@
 
 namespace HydraBookingCustomization\Features;
 
-use HydraBookingCustomization\Core\AccessControl;
+use HydraBookingCustomization\Core\CacheManager;
 
 /**
  * Host Dashboard Feature Class
@@ -95,15 +95,8 @@ class HostDashboard {
 		?>
 		<div id="hbc-host-dashboard" class="hbc-dashboard hbc-host-dashboard">
 			<div class="hbc-dashboard-header">
-				<div class="hbc-header-content">
-					<div class="hbc-header-text">
-						<h2><?php printf( __( 'Welcome, %s!', 'hydra-booking-customization' ), esc_html( $user->display_name ) ); ?></h2>
-						<p><?php _e( 'Manage your meetings, bookings, and join links from this dashboard.', 'hydra-booking-customization' ); ?></p>
-					</div>
-					<div class="hbc-header-actions">
-						<button type="button" class="hbc-logout-btn button" onclick="hbcLogout()"><?php _e( 'Logout', 'hydra-booking-customization' ); ?></button>
-					</div>
-				</div>
+				<h2><?php printf( __( 'Welcome, %s!', 'hydra-booking-customization' ), esc_html( $user->display_name ) ); ?></h2>
+				<p><?php _e( 'Manage your meetings, bookings, and join links from this dashboard.', 'hydra-booking-customization' ); ?></p>
 			</div>
 
 			<div class="hbc-dashboard-stats">
@@ -142,32 +135,6 @@ class HostDashboard {
 				</div>
 			</div>
 		</div>
-		
-		<script>
-		function hbcLogout() {
-			if (confirm('<?php _e( 'Are you sure you want to logout?', 'hydra-booking-customization' ); ?>')) {
-				fetch('<?php echo admin_url( 'admin-ajax.php' ); ?>', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/x-www-form-urlencoded',
-					},
-					body: 'action=hbc_logout&nonce=<?php echo wp_create_nonce( 'hbc_logout_nonce' ); ?>'
-				})
-				.then(response => response.json())
-				.then(data => {
-					if (data.success) {
-						window.location.href = data.data.login_url;
-					} else {
-						alert('<?php _e( 'Logout failed. Please try again.', 'hydra-booking-customization' ); ?>');
-					}
-				})
-				.catch(error => {
-					console.error('Error:', error);
-					alert('<?php _e( 'Logout failed. Please try again.', 'hydra-booking-customization' ); ?>');
-				});
-			}
-		}
-		</script>
 		<?php
 	}
 
@@ -415,6 +382,21 @@ class HostDashboard {
 					<textarea id="bio" name="bio" rows="4"><?php echo esc_textarea( $host_data['bio'] ?? $user->description ); ?></textarea>
 				</div>
 				
+				<div class="hbc-form-group">
+					<label for="timezone"><?php _e( 'Timezone', 'hydra-booking-customization' ); ?></label>
+					<select id="timezone" name="timezone">
+						<?php 
+						$selected_timezone = $host_data['timezone'] ?? get_option( 'timezone_string' );
+						$timezones = timezone_identifiers_list();
+						foreach ( $timezones as $timezone ) :
+						?>
+							<option value="<?php echo esc_attr( $timezone ); ?>" <?php selected( $selected_timezone, $timezone ); ?>>
+								<?php echo esc_html( $timezone ); ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+				</div>
+				
 				<div class="hbc-form-actions">
 					<button type="submit" class="button button-primary"><?php _e( 'Update Profile', 'hydra-booking-customization' ); ?></button>
 				</div>
@@ -538,124 +520,169 @@ class HostDashboard {
 	/**
 	 * Get host data from user ID.
 	 *
+	 * @since 1.0.0
 	 * @param int $user_id User ID.
 	 * @return array
 	 */
 	private function get_host_data( $user_id ) {
+		$user_id = absint( $user_id );
+
+		return CacheManager::remember( 'host_data_' . $user_id, CacheManager::TTLS['profile'], function () use ( $user_id ) {
+			return $this->fetch_host_data( $user_id );
+		} );
+	}
+
+	/**
+	 * Fetch host data from the database (uncached).
+	 *
+	 * @since 1.1.0
+	 * @param int $user_id User ID.
+	 * @return array
+	 */
+	private function fetch_host_data( $user_id ) {
 		global $wpdb;
-		
+
 		$hosts_table = $wpdb->prefix . 'tfhb_hosts';
-		
+
 		$host = $wpdb->get_row( $wpdb->prepare(
 			"SELECT * FROM {$hosts_table} WHERE user_id = %d",
 			$user_id
 		), ARRAY_A );
-		
+
 		if ( ! $host ) {
-			// Create host record if it doesn't exist
+			// Create host record if it doesn't exist.
 			$user = get_user_by( 'id', $user_id );
 			$host_data = array(
-				'user_id' => $user_id,
+				'user_id'    => $user_id,
 				'first_name' => $user->first_name,
-				'last_name' => $user->last_name,
-				'email' => $user->user_email,
-				'status' => 'active',
-				'created_at' => current_time( 'mysql' )
+				'last_name'  => $user->last_name,
+				'email'      => $user->user_email,
+				'status'     => 'active',
+				'created_at' => current_time( 'mysql' ),
 			);
-			
+
 			$wpdb->insert( $hosts_table, $host_data );
-			$host_data['id'] = $wpdb->insert_id;
+			$host_data['id']      = $wpdb->insert_id;
 			$host_data['host_id'] = $host_data['id'];
-			
+
 			return $host_data;
 		}
-		
+
 		$host['host_id'] = $host['id'];
 		return $host;
 	}
 
 	/**
-	 * Get host statistics.
+	 * Get host statistics (cached).
 	 *
+	 * @since 1.0.0
 	 * @param int $host_id Host ID.
 	 * @return array
 	 */
 	private function get_host_stats( $host_id ) {
+		$host_id = absint( $host_id );
+
+		return CacheManager::remember( 'host_stats_' . $host_id, CacheManager::TTLS['stats'], function () use ( $host_id ) {
+			return $this->compute_host_stats( $host_id );
+		} );
+	}
+
+	/**
+	 * Compute host statistics from the database (uncached).
+	 *
+	 * @since 1.1.0
+	 * @param int $host_id Host ID.
+	 * @return array
+	 */
+	private function compute_host_stats( $host_id ) {
 		global $wpdb;
-		
-		$bookings_table = $wpdb->prefix . 'tfhb_bookings';
+
+		$bookings_table  = $wpdb->prefix . 'tfhb_bookings';
 		$attendees_table = $wpdb->prefix . 'tfhb_attendees';
-		
-		// Use WordPress timezone for consistent time handling
-		$today = current_time( 'Y-m-d' );
-		$month_start = current_time( 'Y-m-01' );
-		$current_datetime = current_time( 'Y-m-d H:i:s' );
-		
-		// Today's meetings
+
+		$today        = current_time( 'Y-m-d' );
+		$month_start  = current_time( 'Y-m-01' );
+		$current_time = current_time( 'mysql' );
+
 		$today_meetings = $wpdb->get_var( $wpdb->prepare(
-			"SELECT COUNT(DISTINCT b.id) 
-			FROM {$bookings_table} b 
-			INNER JOIN {$attendees_table} a ON b.id = a.booking_id 
+			"SELECT COUNT(DISTINCT b.id)
+			FROM {$bookings_table} b
+			INNER JOIN {$attendees_table} a ON b.id = a.booking_id
 			WHERE a.host_id = %d AND b.meeting_dates = %s",
 			$host_id, $today
 		) );
-		
-		// Upcoming meetings (future meetings including today's future meetings)
+
 		$upcoming_meetings = $wpdb->get_var( $wpdb->prepare(
-			"SELECT COUNT(DISTINCT b.id) 
-			FROM {$bookings_table} b 
-			INNER JOIN {$attendees_table} a ON b.id = a.booking_id 
-			WHERE a.host_id = %d AND CONCAT(b.meeting_dates, ' ', COALESCE(b.start_time, '00:00:00')) > %s",
-			$host_id, $current_datetime
+			"SELECT COUNT(DISTINCT b.id)
+			FROM {$bookings_table} b
+			INNER JOIN {$attendees_table} a ON b.id = a.booking_id
+			WHERE a.host_id = %d AND CONCAT(b.meeting_dates, ' ', b.start_time) > %s",
+			$host_id, $current_time
 		) );
-		
-		// Completed meetings this month (meetings that have ended OR have completed status)
+
 		$completed_meetings = $wpdb->get_var( $wpdb->prepare(
-			"SELECT COUNT(DISTINCT b.id) 
-			FROM {$bookings_table} b 
-			INNER JOIN {$attendees_table} a ON b.id = a.booking_id 
-			WHERE a.host_id = %d 
-			AND b.meeting_dates >= %s 
-			AND (b.status = 'completed' OR CONCAT(b.meeting_dates, ' ', COALESCE(b.end_time, '23:59:59')) < %s)",
-			$host_id, $month_start, $current_datetime
+			"SELECT COUNT(DISTINCT b.id)
+			FROM {$bookings_table} b
+			INNER JOIN {$attendees_table} a ON b.id = a.booking_id
+			WHERE a.host_id = %d
+			AND CONCAT(b.meeting_dates, ' ', b.start_time) < %s
+			AND b.meeting_dates >= %s
+			AND b.status = 'confirmed'",
+			$host_id, $current_time, $month_start
 		) );
-		
-		// Active join links
+
 		$active_join_links = $wpdb->get_var( $wpdb->prepare(
-			"SELECT COUNT(DISTINCT b.id) 
-			FROM {$bookings_table} b 
-			INNER JOIN {$attendees_table} a ON b.id = a.booking_id 
-			WHERE a.host_id = %d 
-			AND CONCAT(b.meeting_dates, ' ', COALESCE(b.start_time, '00:00:00')) > %s 
-			AND b.meeting_locations IS NOT NULL 
+			"SELECT COUNT(DISTINCT b.id)
+			FROM {$bookings_table} b
+			INNER JOIN {$attendees_table} a ON b.id = a.booking_id
+			WHERE a.host_id = %d
+			AND CONCAT(b.meeting_dates, ' ', b.start_time) > %s
+			AND b.meeting_locations IS NOT NULL
 			AND b.meeting_locations != ''",
-			$host_id, $current_datetime
+			$host_id, $current_time
 		) );
-		
+
 		return array(
-			'today_meetings' => (int) $today_meetings,
-			'upcoming_meetings' => (int) $upcoming_meetings,
+			'today_meetings'     => (int) $today_meetings,
+			'upcoming_meetings'  => (int) $upcoming_meetings,
 			'completed_meetings' => (int) $completed_meetings,
-			'active_join_links' => (int) $active_join_links,
+			'active_join_links'  => (int) $active_join_links,
 		);
 	}
 
 	/**
-	 * Get host bookings.
+	 * Get host bookings (cached).
 	 *
+	 * @since 1.0.0
 	 * @param int    $host_id Host ID.
 	 * @param string $type    Booking type (today, upcoming, past, all).
 	 * @return array
 	 */
 	private function get_host_bookings( $host_id, $type = 'all' ) {
+		$host_id    = absint( $host_id );
+		$cache_key  = 'host_bookings_' . $host_id . '_' . sanitize_key( $type );
+
+		return CacheManager::remember( $cache_key, CacheManager::TTLS['bookings'], function () use ( $host_id, $type ) {
+			return $this->fetch_host_bookings( $host_id, $type );
+		} );
+	}
+
+	/**
+	 * Fetch host bookings from the database (uncached).
+	 *
+	 * @since 1.1.0
+	 * @param int    $host_id Host ID.
+	 * @param string $type    Booking type (today, upcoming, past, all).
+	 * @return array
+	 */
+	private function fetch_host_bookings( $host_id, $type = 'all' ) {
 		global $wpdb;
 		
 		$attendees_table = $wpdb->prefix . 'tfhb_attendees';
 		$bookings_table = $wpdb->prefix . 'tfhb_bookings';
 		$meetings_table = $wpdb->prefix . 'tfhb_meetings';
 		
-		// Use WordPress timezone for consistent time handling
-		$current_datetime = current_time( 'Y-m-d H:i:s' );
+		$current_time = current_time( 'mysql' );
 		$today = current_time( 'Y-m-d' );
 		
 		// Build the base query
@@ -687,13 +714,13 @@ class HostDashboard {
 				$order_by = 'ORDER BY b.start_time ASC';
 				break;
 			case 'upcoming':
-				$query .= " AND CONCAT(b.meeting_dates, ' ', COALESCE(b.start_time, '00:00:00')) > %s";
-				$query_params[] = $current_datetime;
+				$query .= " AND CONCAT(b.meeting_dates, ' ', b.start_time) > %s";
+				$query_params[] = $current_time;
 				$order_by = 'ORDER BY b.meeting_dates ASC, b.start_time ASC';
 				break;
 			case 'past':
-				$query .= " AND CONCAT(b.meeting_dates, ' ', COALESCE(b.end_time, '23:59:59')) < %s";
-				$query_params[] = $current_datetime;
+				$query .= " AND CONCAT(b.meeting_dates, ' ', b.start_time) < %s";
+				$query_params[] = $current_time;
 				$order_by = 'ORDER BY b.meeting_dates DESC, b.start_time DESC';
 				break;
 			default:
@@ -707,22 +734,38 @@ class HostDashboard {
 	}
 
 	/**
-	 * Get meetings with join links.
+	 * Get meetings with join links (cached).
 	 *
+	 * @since 1.0.0
 	 * @param int $host_id Host ID.
 	 * @return array
 	 */
 	private function get_meetings_with_join_links( $host_id ) {
+		$host_id = absint( $host_id );
+
+		return CacheManager::remember( 'join_links_' . $host_id, CacheManager::TTLS['links'], function () use ( $host_id ) {
+			return $this->fetch_meetings_with_join_links( $host_id );
+		} );
+	}
+
+	/**
+	 * Fetch meetings with join links from the database (uncached).
+	 *
+	 * @since 1.1.0
+	 * @param int $host_id Host ID.
+	 * @return array
+	 */
+	private function fetch_meetings_with_join_links( $host_id ) {
 		global $wpdb;
-		
+
 		$attendees_table = $wpdb->prefix . 'tfhb_attendees';
-		$bookings_table = $wpdb->prefix . 'tfhb_bookings';
-		$meetings_table = $wpdb->prefix . 'tfhb_meetings';
-		
-		$current_datetime = current_time( 'Y-m-d H:i:s' );
-		
+		$bookings_table  = $wpdb->prefix . 'tfhb_bookings';
+		$meetings_table  = $wpdb->prefix . 'tfhb_meetings';
+
+		$current_time = current_time( 'mysql' );
+
 		$query = "
-			SELECT 
+			SELECT
 				b.id as booking_id,
 				b.meeting_dates,
 				b.start_time,
@@ -732,13 +775,13 @@ class HostDashboard {
 			FROM {$bookings_table} b
 			LEFT JOIN {$meetings_table} m ON b.meeting_id = m.id
 			LEFT JOIN {$attendees_table} a ON b.id = a.booking_id
-			WHERE a.host_id = %d 
-			AND CONCAT(b.meeting_dates, ' ', COALESCE(b.start_time, '00:00:00')) > %s
+			WHERE a.host_id = %d
+			AND CONCAT(b.meeting_dates, ' ', b.start_time) > %s
 			GROUP BY b.id
 			ORDER BY b.meeting_dates ASC, b.start_time ASC
 		";
-		
-		return $wpdb->get_results( $wpdb->prepare( $query, $host_id, $current_datetime ) );
+
+		return $wpdb->get_results( $wpdb->prepare( $query, $host_id, $current_time ) );
 	}
 
 	/**
@@ -814,32 +857,47 @@ class HostDashboard {
 	}
 
 	/**
+	 * Validate a host AJAX request.
+	 *
+	 * Consolidates the repeated nonce, login, and host data checks
+	 * common to all host dashboard AJAX handlers.
+	 *
+	 * @since 1.1.0
+	 * @param string $nonce_action Nonce action name. Default 'hbc_ajax_nonce'.
+	 * @param string $nonce_field  POST field name for nonce. Default 'nonce'.
+	 * @return array|false Host data array on success, false on failure (JSON error already sent).
+	 */
+	private function validate_host_ajax_request( $nonce_action = 'hbc_ajax_nonce', $nonce_field = 'nonce' ) {
+		check_ajax_referer( $nonce_action, $nonce_field );
+
+		if ( ! is_user_logged_in() ) {
+			wp_send_json_error( __( 'User not logged in.', 'hydra-booking-customization' ) );
+			return false;
+		}
+
+		$current_user = wp_get_current_user();
+		$host_data    = $this->get_host_data( $current_user->ID );
+
+		if ( ! $host_data || ! isset( $host_data['host_id'] ) ) {
+			wp_send_json_error( __( 'Host data not found.', 'hydra-booking-customization' ) );
+			return false;
+		}
+
+		return $host_data;
+	}
+
+	/**
 	 * AJAX: Get host bookings.
 	 */
 	public function ajax_get_host_bookings() {
-		check_ajax_referer( 'hbc_ajax_nonce', 'nonce' );
-		
-		// Verify host access
-		AccessControl::verify_host_ajax_access();
-		
-		$current_user = wp_get_current_user();
-		$host_data = $this->get_host_data( $current_user->ID );
-		
-		if ( ! $host_data || ! isset( $host_data['host_id'] ) ) {
-			wp_send_json_error( __( 'Host data not found.', 'hydra-booking-customization' ) );
+		$host_data = $this->validate_host_ajax_request();
+		if ( ! $host_data ) {
+			return;
 		}
 		
 		$period = sanitize_text_field( $_POST['period'] ?? 'upcoming' );
 		
 		$bookings = $this->get_host_bookings( $host_data['host_id'], $period );
-		
-		// Get testing mode status
-		$testing_mode = ( HBC_TEST_MODE_STATUS === 'active' );
-		
-		// Add testing mode to each booking
-		foreach ( $bookings as &$booking ) {
-			$booking->testing_mode = $testing_mode;
-		}
 		
 		wp_send_json_success( $bookings );
 	}
@@ -848,10 +906,10 @@ class HostDashboard {
 	 * AJAX: Update booking status.
 	 */
 	public function ajax_update_booking_status() {
-		check_ajax_referer( 'hbc_ajax_nonce', 'nonce' );
-		
-		// Verify host access
-		AccessControl::verify_host_ajax_access();
+		$host_data = $this->validate_host_ajax_request();
+		if ( ! $host_data ) {
+			return;
+		}
 		
 		$booking_id = intval( $_POST['booking_id'] ?? 0 );
 		$status = sanitize_text_field( $_POST['status'] ?? '' );
@@ -882,10 +940,10 @@ class HostDashboard {
 	 * AJAX: Generate join link.
 	 */
 	public function ajax_generate_join_link() {
-		check_ajax_referer( 'hbc_ajax_nonce', 'nonce' );
-		
-		// Verify host access
-		AccessControl::verify_host_ajax_access();
+		$host_data = $this->validate_host_ajax_request();
+		if ( ! $host_data ) {
+			return;
+		}
 		
 		$booking_id = intval( $_POST['booking_id'] ?? 0 );
 		
@@ -912,10 +970,10 @@ class HostDashboard {
 	 * AJAX: Send join link.
 	 */
 	public function ajax_send_join_link() {
-		check_ajax_referer( 'hbc_ajax_nonce', 'nonce' );
-		
-		// Verify host access
-		AccessControl::verify_host_ajax_access();
+		$host_data = $this->validate_host_ajax_request();
+		if ( ! $host_data ) {
+			return;
+		}
 		
 		$booking_id = intval( $_POST['booking_id'] ?? 0 );
 		$link_type = sanitize_text_field( $_POST['link_type'] ?? 'jitsi' );
@@ -948,19 +1006,19 @@ class HostDashboard {
 	 * AJAX: Update host profile.
 	 */
 	public function ajax_update_host_profile() {
-		check_ajax_referer( 'hbc_update_host_profile', 'hbc_host_profile_nonce' );
-		
-		// Verify host access
-		AccessControl::verify_host_ajax_access();
-		
+		$host_data = $this->validate_host_ajax_request( 'hbc_update_host_profile', 'hbc_host_profile_nonce' );
+		if ( ! $host_data ) {
+			return;
+		}
+
 		$current_user = wp_get_current_user();
-		$host_data = $this->get_host_data( $current_user->ID );
 		
 		$first_name = sanitize_text_field( $_POST['first_name'] ?? '' );
 		$last_name = sanitize_text_field( $_POST['last_name'] ?? '' );
-		$email = sanitize_email( $_POST['email'] ?? '' );
+		$email = sanitize_email( $_POST['user_email'] ?? '' );
 		$phone = sanitize_text_field( $_POST['phone'] ?? '' );
 		$bio = sanitize_textarea_field( $_POST['bio'] ?? '' );
+		$timezone = sanitize_text_field( $_POST['timezone'] ?? '' );
 		
 		// Handle password change if provided
 		$current_password = sanitize_text_field( $_POST['current_password'] ?? '' );
@@ -994,6 +1052,7 @@ class HostDashboard {
 			'email' => $email,
 			'phone_number' => $phone,
 			'about' => $bio,
+			'time_zone' => $timezone,
 		);
 		
 		$result = $wpdb->update(
@@ -1021,6 +1080,10 @@ class HostDashboard {
 			
 			wp_update_user( $user_update_data );
 			
+			// Invalidate host caches so dashboard shows fresh data.
+			CacheManager::invalidate_host( $host_data['host_id'] );
+			CacheManager::delete( 'host_data_' . $current_user->ID );
+			
 			wp_send_json_success( __( 'Profile updated successfully.', 'hydra-booking-customization' ) );
 		} else {
 			wp_send_json_error( __( 'Failed to update profile.', 'hydra-booking-customization' ) );
@@ -1031,10 +1094,10 @@ class HostDashboard {
 	 * AJAX: Get booking details.
 	 */
 	public function ajax_get_booking_details() {
-		check_ajax_referer( 'hbc_ajax_nonce', 'nonce' );
-		
-		// Verify host access
-		AccessControl::verify_host_ajax_access();
+		$host_data = $this->validate_host_ajax_request();
+		if ( ! $host_data ) {
+			return;
+		}
 		
 		$booking_id = intval( $_POST['booking_id'] ?? 0 );
 		
@@ -1097,18 +1160,11 @@ class HostDashboard {
 	 * AJAX: Get host stats.
 	 */
 	public function ajax_get_host_stats() {
-		check_ajax_referer( 'hbc_ajax_nonce', 'nonce' );
-		
-		// Verify host access
-		AccessControl::verify_host_ajax_access();
-		
-		$current_user = wp_get_current_user();
-		$host_data = $this->get_host_data( $current_user->ID );
-		
-		if ( ! $host_data || ! isset( $host_data['host_id'] ) ) {
-			wp_send_json_error( __( 'Host data not found.', 'hydra-booking-customization' ) );
+		$host_data = $this->validate_host_ajax_request();
+		if ( ! $host_data ) {
+			return;
 		}
-		
+
 		$stats = $this->get_host_stats( $host_data['host_id'] );
 		
 		wp_send_json_success( $stats );
@@ -1118,17 +1174,12 @@ class HostDashboard {
 	 * AJAX: Get host profile.
 	 */
 	public function ajax_get_host_profile() {
-		check_ajax_referer( 'hbc_ajax_nonce', 'nonce' );
-		
-		// Verify host access
-		AccessControl::verify_host_ajax_access();
-		
-		$current_user = wp_get_current_user();
-		$host_data = $this->get_host_data( $current_user->ID );
-		
+		$host_data = $this->validate_host_ajax_request();
 		if ( ! $host_data ) {
-			wp_send_json_error( __( 'Host data not found.', 'hydra-booking-customization' ) );
+			return;
 		}
+
+		$current_user = wp_get_current_user();
 		
 		$profile = array(
 			'first_name' => $current_user->first_name,
@@ -1146,16 +1197,9 @@ class HostDashboard {
 	 * AJAX: Get join links.
 	 */
 	public function ajax_get_join_links() {
-		check_ajax_referer( 'hbc_ajax_nonce', 'nonce' );
-		
-		// Verify host access
-		AccessControl::verify_host_ajax_access();
-		
-		$current_user = wp_get_current_user();
-		$host_data = $this->get_host_data( $current_user->ID );
-		
-		if ( ! $host_data || ! isset( $host_data['host_id'] ) ) {
-			wp_send_json_error( __( 'Host data not found.', 'hydra-booking-customization' ) );
+		$host_data = $this->validate_host_ajax_request();
+		if ( ! $host_data ) {
+			return;
 		}
 		
 		// Get all bookings for this host with join links
