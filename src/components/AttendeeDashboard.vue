@@ -5,7 +5,7 @@
       <div class="bg-white p-6 rounded-lg shadow-lg">
         <div class="flex items-center space-x-3">
           <div class="loading-spinner"></div>
-          <span class="text-gray-700">Loading...</span>
+          <span class="text-gray-700">{{ t('loading') }}</span>
         </div>
       </div>
     </div>
@@ -13,8 +13,8 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <!-- Header -->
       <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Attendee Dashboard</h1>
-        <p class="mt-2 text-gray-600">Manage your bookings and profile</p>
+        <h1 class="text-3xl font-bold text-gray-900">{{ t('attendee_dashboard') }}</h1>
+        <p class="mt-2 text-gray-600">{{ t('manage_bookings_profile') }}</p>
       </div>
 
       <!-- Alert Messages -->
@@ -39,7 +39,7 @@
               </div>
               <div class="ml-4">
                 <p class="text-2xl font-semibold text-gray-900">{{ stats.total_bookings || 0 }}</p>
-                <p class="text-sm text-gray-600">Total Bookings</p>
+                <p class="text-sm text-gray-600">{{ t('total_bookings') }}</p>
               </div>
             </div>
           </div>
@@ -57,7 +57,7 @@
               </div>
               <div class="ml-4">
                 <p class="text-2xl font-semibold text-gray-900">{{ stats.upcoming_bookings || 0 }}</p>
-                <p class="text-sm text-gray-600">Upcoming</p>
+                <p class="text-sm text-gray-600">{{ t('upcoming') }}</p>
               </div>
             </div>
           </div>
@@ -75,7 +75,7 @@
               </div>
               <div class="ml-4">
                 <p class="text-2xl font-semibold text-gray-900">{{ stats.completed_bookings || 0 }}</p>
-                <p class="text-sm text-gray-600">Completed</p>
+                <p class="text-sm text-gray-600">{{ t('completed') }}</p>
               </div>
             </div>
           </div>
@@ -93,7 +93,7 @@
               </div>
               <div class="ml-4">
                 <p class="text-2xl font-semibold text-gray-900">{{ stats.cancelled_bookings || 0 }}</p>
-                <p class="text-sm text-gray-600">Cancelled</p>
+                <p class="text-sm text-gray-600">{{ t('cancelled') }}</p>
               </div>
             </div>
           </div>
@@ -143,12 +143,12 @@
         <!-- Bookings Tab -->
         <div v-show="activeTab === 'bookings'" class="p-6">
           <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-medium text-gray-900">My Bookings</h3>
+            <h3 class="text-lg font-medium text-gray-900">{{ t('my_bookings') }}</h3>
             <button @click="loadBookings" class="btn-primary">
               <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
               </svg>
-              Refresh
+              {{ t('refresh') }}
             </button>
           </div>
 
@@ -156,8 +156,8 @@
             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4m-6 0h6m-6 0V7a1 1 0 00-1 1v9a2 2 0 002 2h6a2 2 0 002-2V8a1 1 0 00-1-1V7" />
             </svg>
-            <h3 class="mt-2 text-sm font-medium text-gray-900">No bookings</h3>
-            <p class="mt-1 text-sm text-gray-500">You don't have any bookings yet.</p>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">{{ t('no_bookings') }}</h3>
+            <p class="mt-1 text-sm text-gray-500">{{ t('no_bookings_message') }}</p>
           </div>
 
           <div v-else class="space-y-4">
@@ -178,11 +178,11 @@
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <p class="text-sm font-medium text-gray-700">Date & Time</p>
+                  <p class="text-sm font-medium text-gray-700">{{ t('date_time') }}</p>
                   <p class="text-sm text-gray-600">{{ formatDateTime(booking.meeting_dates, booking.start_time) }}</p>
                 </div>
                 <div>
-                  <p class="text-sm font-medium text-gray-700">Duration</p>
+                  <p class="text-sm font-medium text-gray-700">{{ t('duration') }}</p>
                   <p class="text-sm text-gray-600">{{ booking.duration || 'N/A' }}</p>
                 </div>
               </div>
@@ -203,14 +203,14 @@
                   @click="cancelBooking(booking.id || booking.booking_id)"
                   class="btn-danger"
                 >
-                  Cancel Booking
+                  {{ t('cancel_booking') }}
                 </button>
                 <button
                   v-if="(booking.status || booking.booking_status) === 'confirmed'"
                   @click="openRescheduleModal(booking)"
                   class="btn-secondary"
                 >
-                  Reschedule
+                  {{ t('reschedule') }}
                 </button>
               </div>
             </div>
@@ -222,32 +222,32 @@
         <!-- Profile Tab -->
         <div v-show="activeTab === 'profile'" class="p-6">
           <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-medium text-gray-900">Profile Settings</h3>
+            <h3 class="text-lg font-medium text-gray-900">{{ t('profile_settings') }}</h3>
             <button @click="openProfileModal" class="btn-primary">
-              Edit Profile
+              {{ t('edit_profile') }}
             </button>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label class="form-label">First Name</label>
-              <p class="text-gray-700">{{ profile.first_name || 'Not set' }}</p>
+              <label class="form-label">{{ t('first_name') }}</label>
+              <p class="text-gray-700">{{ profile.first_name || t('not_set') }}</p>
             </div>
             <div>
-              <label class="form-label">Last Name</label>
-              <p class="text-gray-700">{{ profile.last_name || 'Not set' }}</p>
+              <label class="form-label">{{ t('last_name') }}</label>
+              <p class="text-gray-700">{{ profile.last_name || t('not_set') }}</p>
             </div>
             <div>
-              <label class="form-label">Email</label>
-              <p class="text-gray-700">{{ profile.email || 'Not set' }}</p>
+              <label class="form-label">{{ t('email') }}</label>
+              <p class="text-gray-700">{{ profile.email || t('not_set') }}</p>
             </div>
             <div>
-              <label class="form-label">Phone</label>
-              <p class="text-gray-700">{{ profile.phone || 'Not set' }}</p>
+              <label class="form-label">{{ t('phone') }}</label>
+              <p class="text-gray-700">{{ profile.phone || t('not_set') }}</p>
             </div>
             <div class="md:col-span-2">
-              <label class="form-label">Timezone</label>
-              <p class="text-gray-700">{{ profile.timezone || 'Not set' }}</p>
+              <label class="form-label">{{ t('timezone') }}</label>
+              <p class="text-gray-700">{{ profile.timezone || t('not_set') }}</p>
             </div>
           </div>
         </div>
@@ -274,6 +274,7 @@
 
 <script>
 import { ref, reactive, onMounted, watch, inject } from 'vue'
+import { __ } from '../utils/i18n.js'
 import { attendeeAPI } from '../utils/api.js'
 import { formatDateTime, getStatusClass, getStatusText, handleApiError, copyToClipboard } from '../utils/helpers.js'
 import ProfileModal from './modals/ProfileModal.vue'
@@ -310,16 +311,19 @@ export default {
     const loadingMeetingLinks = ref(new Set())
 
     // Tab configuration
+    // Translation helper for templates.
+    const t = (key, fallback) => __(key, fallback)
+
     const tabs = [
-      { id: 'bookings', name: 'My Bookings' },
-      { id: 'profile', name: 'Profile' }
+      { id: 'bookings', name: t('my_bookings', 'My Bookings') },
+      { id: 'profile', name: t('profile', 'Profile') }
     ]
 
     // Booking filter configuration
     const bookingFilters = [
-      { id: 'upcoming', name: 'Upcoming' },
-      { id: 'completed', name: 'Completed' },
-      { id: 'cancelled', name: 'Cancelled' }
+      { id: 'upcoming', name: t('upcoming', 'Upcoming') },
+      { id: 'completed', name: t('completed', 'Completed') },
+      { id: 'cancelled', name: t('cancelled', 'Cancelled') }
     ]
 
     // Methods
@@ -449,17 +453,17 @@ export default {
         })
       } catch (error) {
         console.error('Failed to load stats:', error)
-        showAlert('error', 'Failed to load statistics')
+        showAlert('error', t('error_loading_stats', 'Failed to load statistics'))
       }
     }
 
     const cancelBooking = async (bookingId) => {
-      if (!confirm('Are you sure you want to cancel this booking?')) return
+      if (!confirm(t('confirm', 'Are you sure?'))) return
 
       try {
         isLoading.value = true
         await attendeeAPI.cancelBooking(bookingId)
-        showAlert('success', 'Booking cancelled successfully')
+        showAlert('success', t('booking_cancelled', 'Booking cancelled successfully'))
         await loadBookings()
         await loadStats()
       } catch (error) {
@@ -479,7 +483,7 @@ export default {
         await attendeeAPI.updateProfile(profileData)
         Object.assign(profile, profileData)
         showProfileModal.value = false
-        showAlert('success', 'Profile updated successfully')
+        showAlert('success', t('profile_updated', 'Profile updated successfully'))
       } catch (error) {
         showAlert('error', handleApiError(error))
       } finally {
@@ -593,7 +597,7 @@ export default {
       const meetingDateTime = new Date(booking.meeting_dates + ' ' + booking.start_time)
       const meetingEndTime = new Date(booking.meeting_dates + ' ' + booking.end_time)
       
-      return 'Join Meeting'
+      return t('join_meeting', 'Join Meeting')
     }
 
     const handleMeetingAction = async (booking) => {
@@ -610,20 +614,20 @@ export default {
         if (response.status && response.meeting_url) {
           // Open meeting in new tab
           window.open(response.meeting_url, '_blank', 'noopener,noreferrer')
-          showAlert('success', 'Meeting opened in new tab')
+          showAlert('success', t('meeting_opened', 'Meeting opened in new tab'))
         } else {
           // Fallback to existing join link if available
           const fallbackLink = getJoinLink(booking.meeting_locations)
           if (fallbackLink) {
             window.open(fallbackLink, '_blank', 'noopener,noreferrer')
-            showAlert('success', 'Meeting opened in new tab')
+            showAlert('success', t('meeting_opened', 'Meeting opened in new tab'))
           } else {
-            showAlert('error', 'Meeting link not available. Please contact support.')
+            showAlert('error', t('meeting_not_available', 'Meeting link not available. Please contact support.'))
           }
         }
       } catch (error) {
         console.error('Error getting meeting link:', error)
-        showAlert('error', 'Failed to get meeting link. Please try again.')
+        showAlert('error', t('meeting_failed', 'Failed to get meeting link. Please try again.'))
       } finally {
         loadingMeetingLinks.value.delete(booking.id || booking.booking_id)
       }
@@ -639,7 +643,7 @@ export default {
           loadStats()
         ])
       } catch (error) {
-        showAlert('error', 'Failed to load dashboard data')
+        showAlert('error', t('error_loading_data', 'Failed to load dashboard data'))
       } finally {
         isLoading.value = false
       }
@@ -668,6 +672,9 @@ export default {
       selectedBooking,
       tabs,
       bookingFilters,
+
+      // Translation
+      t,
 
       // Methods
       showAlert,
