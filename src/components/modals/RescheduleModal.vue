@@ -21,9 +21,9 @@
           <div v-if="booking" class="bg-gray-50 p-4 rounded-lg mb-6">
             <h4 class="text-lg font-medium text-gray-900 mb-2">Current Booking</h4>
             <div class="text-sm text-gray-600">
-              <p><strong>Date:</strong> {{ formatDateTime(booking.date_time) }}</p>
-              <p><strong>Duration:</strong> {{ booking.duration }} minutes</p>
-              <p v-if="booking.host_name"><strong>Host:</strong> {{ booking.host_name }}</p>
+              <p><strong>Date:</strong> {{ formatDateTime(booking.meeting_dates, booking.start_time) }}</p>
+              <p><strong>Duration:</strong> {{ booking.duration || 'N/A' }}</p>
+              <p v-if="booking.host_first_name"><strong>Host:</strong> {{ booking.host_first_name }} {{ booking.host_last_name }}</p>
             </div>
           </div>
 
@@ -85,25 +85,7 @@
               <p v-if="errors.duration" class="form-error">{{ errors.duration }}</p>
             </div>
 
-            <!-- Timezone -->
-            <div>
-              <label for="timezone" class="form-label">Timezone</label>
-              <select
-                id="timezone"
-                v-model="form.timezone"
-                class="form-input"
-                :class="{ 'border-red-500': errors.timezone }"
-              >
-                <option
-                  v-for="tz in timezones"
-                  :key="tz.value"
-                  :value="tz.value"
-                >
-                  {{ tz.label }}
-                </option>
-              </select>
-              <p v-if="errors.timezone" class="form-error">{{ errors.timezone }}</p>
-            </div>
+
 
             <!-- Reason for Rescheduling -->
             <div>
@@ -191,7 +173,6 @@ export default {
       new_date: '',
       new_time: '',
       duration: 30,
-      timezone: 'America/New_York',
       reason: '',
       notify_host: true,
       send_confirmation: true
@@ -204,19 +185,7 @@ export default {
       message: ''
     })
 
-    // Common timezones
-    const timezones = [
-      { value: 'America/New_York', label: 'Eastern Time (ET)' },
-      { value: 'America/Chicago', label: 'Central Time (CT)' },
-      { value: 'America/Denver', label: 'Mountain Time (MT)' },
-      { value: 'America/Los_Angeles', label: 'Pacific Time (PT)' },
-      { value: 'Europe/London', label: 'Greenwich Mean Time (GMT)' },
-      { value: 'Europe/Paris', label: 'Central European Time (CET)' },
-      { value: 'Asia/Tokyo', label: 'Japan Standard Time (JST)' },
-      { value: 'Asia/Shanghai', label: 'China Standard Time (CST)' },
-      { value: 'Asia/Kolkata', label: 'India Standard Time (IST)' },
-      { value: 'Australia/Sydney', label: 'Australian Eastern Time (AET)' }
-    ]
+
 
     // Minimum date (tomorrow)
     const minDate = computed(() => {
@@ -323,11 +292,10 @@ export default {
 
       try {
         const rescheduleData = {
-          booking_id: props.booking.id,
-          new_date: form.new_date,
-          new_time: form.new_time,
+          bookingId: props.booking.id || props.booking.booking_id,
+          newDate: form.new_date,
+          newTime: form.new_time,
           duration: form.duration,
-          timezone: form.timezone,
           reason: form.reason,
           notify_host: form.notify_host,
           send_confirmation: form.send_confirmation
@@ -345,7 +313,6 @@ export default {
     const initializeForm = () => {
       if (props.booking) {
         form.duration = props.booking.duration || 30
-        form.timezone = props.booking.timezone || 'America/New_York'
       }
     }
 
@@ -367,7 +334,6 @@ export default {
       form,
       errors,
       alert,
-      timezones,
       minDate,
       showAlert,
       validateForm,

@@ -114,11 +114,19 @@
                     <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
                   </svg>
                   <div>
-                    <div class="font-medium">ID: {{ booking.id }}</div>
+                    <div class="font-medium">HB-{{ String(booking.id || '000').padStart(6, '0') }}</div>
                     <div class="text-xs text-gray-500">Booking reference</div>
                   </div>
                 </div>
               </div>
+
+              <!-- Countdown Timer -->
+              <CountdownTimer
+                v-if="booking.meeting_dates && booking.start_time && booking.status === 'confirmed'"
+                :meeting-date="booking.meeting_dates"
+                :start-time="booking.start_time"
+                @expired="$emit('show-alert', 'info', 'Meeting has started!')"
+              />
 
               <!-- Notes/Comments -->
               <div v-if="booking.notes || booking.internal_note || booking.attendee_comment" class="mt-3 text-sm text-gray-600">
@@ -151,7 +159,7 @@
                   Confirm
                 </button>
                 <button
-                  @click="$emit('update-status', booking.id, 'cancelled')"
+                  @click="confirmCancel(booking.id)"
                   class="btn-danger text-xs"
                 >
                   Cancel
@@ -160,13 +168,15 @@
 
               <div v-else-if="booking.status === 'confirmed'" class="flex flex-col space-y-1">
                 <button
-                  @click="$emit('update-status', booking.id, 'completed')"
+                  v-if="isMeetingCompleted(booking) || hasMeetingStarted(booking)"
+                  @click="confirmMarkComplete(booking.id)"
                   class="btn-success text-xs"
                 >
                   Mark Complete
                 </button>
                 <button
-                  @click="$emit('update-status', booking.id, 'cancelled')"
+                  v-if="!isMeetingCompleted(booking)"
+                  @click="confirmCancel(booking.id)"
                   class="btn-danger text-xs"
                 >
                   Cancel
@@ -234,10 +244,15 @@
 <script>
 import { formatDateTime, getStatusClass, getStatusText, copyToClipboard } from '../utils/helpers.js'
 import { hostAPI, attendeeAPI } from '../utils/api.js'
+import { isTestModeActive } from '../utils/constants.js'
 import { ref } from 'vue'
+import CountdownTimer from './CountdownTimer.vue'
 
 export default {
   name: 'BookingsList',
+  components: {
+    CountdownTimer
+  },
   props: {
     bookings: {
       type: Array,
@@ -383,12 +398,32 @@ export default {
       return booking.status === 'confirmed' && (hasJoinLink(booking.meeting_locations) || booking.meeting_id)
     }
 
-    const isMeetingAvailable = (booking) => {
-      // TESTING MODE: Always return true to bypass time restrictions
-      // This allows immediate access to meeting links regardless of scheduled time
-      return true
+    const hasMeetingStarted = (booking) => {
+      return booking.meeting_started_at && parseInt(booking.meeting_started_at) > 0
+    }
+
+    const isMeetingCompleted = (booking) => {
+      const now = new Date()
+      let endTimeMs = new Date(booking.meeting_dates + ' ' + booking.end_time).getTime()
       
-      /* Original time-based logic (commented out for testing):
+      if (booking.meeting_started_at && parseInt(booking.meeting_started_at) > 0) {
+        const startedAtMs = parseInt(booking.meeting_started_at)
+        const durationMs = booking.duration ? parseInt(booking.duration) * 60 * 1000 : 30 * 60 * 1000
+        endTimeMs = startedAtMs + durationMs
+      }
+      return now.getTime() > endTimeMs
+    }
+
+    const isMeetingAvailable = (booking) => {
+      if (isMeetingCompleted(booking)) {
+        return false
+      }
+
+      // Test mode: bypass all time restrictions (unless completed)
+      if (isTestModeActive()) {
+        return true
+      }
+
       const now = new Date()
       const meetingDateTime = new Date(booking.meeting_dates + ' ' + booking.start_time)
       const meetingEndTime = new Date(booking.meeting_dates + ' ' + booking.end_time)
@@ -397,15 +432,18 @@ export default {
       const fiveMinutesBefore = new Date(meetingDateTime.getTime() - 5 * 60 * 1000)
       
       return now >= fiveMinutesBefore && now <= meetingEndTime
-      */
     }
 
     const getMeetingButtonClass = (booking) => {
-      // TESTING MODE: Always return active button class to bypass time restrictions
-      // This ensures buttons are always enabled and accessible
-      return 'btn-success animate-pulse' // Always show as active/live
-      
-      /* Original time-based logic (commented out for testing):
+      if (isMeetingCompleted(booking)) {
+        return 'btn-secondary opacity-50 cursor-not-allowed'
+      }
+
+      // Test mode: always show active button
+      if (isTestModeActive()) {
+        return 'btn-success animate-pulse'
+      }
+
       if (!isMeetingAvailable(booking)) {
         return 'btn-secondary opacity-50 cursor-not-allowed'
       }
@@ -419,18 +457,26 @@ export default {
       } else {
         return 'btn-primary' // Meeting available soon
       }
-      */
     }
 
     const getMeetingButtonText = (booking, userType) => {
-      // if (!isMeetingAvailable(booking)) {
-      //   return 'Scheduled'
-      // }
+      if (isMeetingCompleted(booking)) {
+        return 'Meeting Completed'
+      }
+
+      // Test mode: always show action text
+      if (isTestModeActive()) {
+        return userType === 'host' ? 'Start Meeting' : 'Join Meeting'
+      }
+
+      if (!isMeetingAvailable(booking)) {
+        return 'Scheduled'
+      }
       
       const now = new Date()
       const meetingDateTime = new Date(booking.meeting_dates + ' ' + booking.start_time)
       const meetingEndTime = new Date(booking.meeting_dates + ' ' + booking.end_time)
-      return userType === 'host' ? 'Start Meeting' : 'Join Meeting'
+
       if (now >= meetingDateTime && now <= meetingEndTime) {
         return userType === 'host' ? 'Start Meeting' : 'Join Meeting'
       } else {
@@ -439,11 +485,22 @@ export default {
       }
     }
 
+    const confirmCancel = (bookingId) => {
+      if (confirm('Are you sure you want to cancel this booking? This action cannot be undone.')) {
+        emit('update-status', bookingId, 'cancelled')
+      }
+    }
+    
+    const confirmMarkComplete = (bookingId) => {
+      emit('update-status', bookingId, 'completed')
+    }
+
     const handleMeetingAction = async (booking) => {
-      // if (!isMeetingAvailable(booking)) {
-      //   emit('show-alert', 'info', 'Meeting will be available 5 minutes before the scheduled time.')
-      //   return
-      // }
+      // In production mode, check time availability
+      if (!isTestModeActive() && !isMeetingAvailable(booking)) {
+        emit('show-alert', 'info', 'Meeting will be available 5 minutes before the scheduled time.')
+        return
+      }
 
       if (loadingMeetingLinks.value.has(booking.id)) {
         return // Already loading
@@ -494,12 +551,16 @@ export default {
       getPaymentStatusClass,
       getPaymentStatusText,
       getJoinLink,
-      // Meeting link functionality
+      // Meeting link
       canShowMeetingButton,
+      hasMeetingStarted,
       isMeetingAvailable,
+      isMeetingCompleted,
       getMeetingButtonClass,
       getMeetingButtonText,
       handleMeetingAction,
+      confirmCancel,
+      confirmMarkComplete,
       loadingMeetingLinks
     }
   }

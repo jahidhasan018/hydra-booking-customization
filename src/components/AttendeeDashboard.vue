@@ -187,6 +187,14 @@
                 </div>
               </div>
 
+              <!-- Countdown Timer -->
+              <CountdownTimer
+                v-if="booking.meeting_dates && booking.start_time && (booking.status === 'confirmed' || booking.booking_status === 'confirmed')"
+                :meeting-date="booking.meeting_dates"
+                :start-time="booking.start_time"
+                @expired="showAlert('info', t('meeting_started', 'Meeting has started!'))"
+              />
+
               <div class="flex space-x-3">
                 <!-- Join Meeting Button -->
                 <button
@@ -199,14 +207,14 @@
                 </button>
                 
                 <button
-                  v-if="(booking.status || booking.booking_status) === 'pending' || (booking.status || booking.booking_status) === 'confirmed'"
+                  v-if="allowCancellation && ((booking.status || booking.booking_status) === 'pending' || (booking.status || booking.booking_status) === 'confirmed')"
                   @click="cancelBooking(booking.id || booking.booking_id)"
                   class="btn-danger"
                 >
                   {{ t('cancel_booking') }}
                 </button>
                 <button
-                  v-if="(booking.status || booking.booking_status) === 'confirmed'"
+                  v-if="allowRescheduling && (booking.status || booking.booking_status) === 'confirmed'"
                   @click="openRescheduleModal(booking)"
                   class="btn-secondary"
                 >
@@ -246,8 +254,8 @@
               <p class="text-gray-700">{{ profile.phone || t('not_set') }}</p>
             </div>
             <div class="md:col-span-2">
-              <label class="form-label">{{ t('timezone') }}</label>
-              <p class="text-gray-700">{{ profile.timezone || t('not_set') }}</p>
+              <label class="form-label">{{ t('bio', 'Bio') }}</label>
+              <p class="text-gray-700 whitespace-pre-wrap">{{ profile.bio || t('not_set') }}</p>
             </div>
           </div>
         </div>
@@ -273,18 +281,21 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted, watch, inject } from 'vue'
+import { ref, reactive, computed, onMounted, watch, inject } from 'vue'
 import { __ } from '../utils/i18n.js'
-import { attendeeAPI } from '../utils/api.js'
+import { attendeeAPI, getWpData } from '../utils/api.js'
 import { formatDateTime, getStatusClass, getStatusText, handleApiError, copyToClipboard } from '../utils/helpers.js'
+import { isTestModeActive } from '../utils/constants.js'
 import ProfileModal from './modals/ProfileModal.vue'
 import RescheduleModal from './modals/RescheduleModal.vue'
+import CountdownTimer from './CountdownTimer.vue'
 
 export default {
   name: 'AttendeeDashboard',
   components: {
     ProfileModal,
-    RescheduleModal
+    RescheduleModal,
+    CountdownTimer
   },
   setup() {
     // Inject toast notification system
@@ -309,6 +320,11 @@ export default {
     const showRescheduleModal = ref(false)
     const selectedBooking = ref(null)
     const loadingMeetingLinks = ref(new Set())
+    
+    // Config state
+    const wpData = getWpData()
+    const allowCancellation = computed(() => wpData.allowCancellation)
+    const allowRescheduling = computed(() => wpData.allowRescheduling)
 
     // Tab configuration
     // Translation helper for templates.
@@ -405,7 +421,7 @@ export default {
             email: data.email || '',
             display_name: data.name || '',
             phone: data.phone || '',
-            timezone: data.timezone || ''
+            bio: data.bio || ''
           })
           
         }
@@ -499,11 +515,7 @@ export default {
     const rescheduleBooking = async (rescheduleData) => {
       try {
         isLoading.value = true
-        await attendeeAPI.rescheduleBooking(
-          rescheduleData.bookingId,
-          rescheduleData.newDate,
-          rescheduleData.newTime
-        )
+        await attendeeAPI.rescheduleBooking(rescheduleData)
         showRescheduleModal.value = false
         showAlert('success', 'Booking rescheduled successfully')
         await loadBookings()
@@ -553,12 +565,28 @@ export default {
              (hasJoinLink(booking.meeting_locations) || booking.meeting_id)
     }
 
-    const isMeetingAvailable = (booking) => {
-      // TESTING MODE: Always return true to bypass time restrictions
-      // This allows immediate access to meeting links regardless of scheduled time
-      return true
+    const isMeetingCompleted = (booking) => {
+      const now = new Date()
+      let endTimeMs = new Date(booking.meeting_dates + ' ' + booking.end_time).getTime()
       
-      /* Original time-based logic (commented out for testing):
+      if (booking.meeting_started_at && parseInt(booking.meeting_started_at) > 0) {
+        const startedAtMs = parseInt(booking.meeting_started_at)
+        const durationMs = booking.duration ? parseInt(booking.duration) * 60 * 1000 : 30 * 60 * 1000
+        endTimeMs = startedAtMs + durationMs
+      }
+      return now.getTime() > endTimeMs
+    }
+
+    const isMeetingAvailable = (booking) => {
+      if (isMeetingCompleted(booking)) {
+        return false
+      }
+
+      // Test mode: bypass all time restrictions (unless completed)
+      if (isTestModeActive()) {
+        return true
+      }
+
       const now = new Date()
       const meetingDateTime = new Date(booking.meeting_dates + ' ' + booking.start_time)
       const meetingEndTime = new Date(booking.meeting_dates + ' ' + booking.end_time)
@@ -567,15 +595,18 @@ export default {
       const fiveMinutesBefore = new Date(meetingDateTime.getTime() - 5 * 60 * 1000)
       
       return now >= fiveMinutesBefore && now <= meetingEndTime
-      */
     }
 
     const getMeetingButtonClass = (booking) => {
-      // TESTING MODE: Always return active button class to bypass time restrictions
-      // This ensures buttons are always enabled and accessible
-      return 'btn-success animate-pulse' // Always show as active/live
-      
-      /* Original time-based logic (commented out for testing):
+      if (isMeetingCompleted(booking)) {
+        return 'btn-secondary opacity-50 cursor-not-allowed'
+      }
+
+      // Test mode: always show active button
+      if (isTestModeActive()) {
+        return 'btn-success animate-pulse'
+      }
+
       if (!isMeetingAvailable(booking)) {
         return 'btn-secondary opacity-50 cursor-not-allowed'
       }
@@ -589,18 +620,41 @@ export default {
       } else {
         return 'btn-primary' // Meeting available soon
       }
-      */
     }
 
     const getMeetingButtonText = (booking) => {
+      if (isMeetingCompleted(booking)) {
+        return t('meeting_completed', 'Meeting Completed')
+      }
+
+      // Test mode: always show action text
+      if (isTestModeActive()) {
+        return t('join_meeting', 'Join Meeting')
+      }
+
+      if (!isMeetingAvailable(booking)) {
+        return t('scheduled', 'Scheduled')
+      }
+
       const now = new Date()
       const meetingDateTime = new Date(booking.meeting_dates + ' ' + booking.start_time)
       const meetingEndTime = new Date(booking.meeting_dates + ' ' + booking.end_time)
       
-      return t('join_meeting', 'Join Meeting')
+      if (now >= meetingDateTime && now <= meetingEndTime) {
+        return t('join_meeting', 'Join Meeting')
+      } else {
+        const minutesUntil = Math.ceil((meetingDateTime.getTime() - now.getTime()) / (1000 * 60))
+        return `${t('available_in', 'Available in')} ${minutesUntil}m`
+      }
     }
 
     const handleMeetingAction = async (booking) => {
+      // In production mode, check time availability
+      if (!isTestModeActive() && !isMeetingAvailable(booking)) {
+        showAlert('info', t('meeting_not_available_yet', 'Meeting will be available 5 minutes before the scheduled time.'))
+        return
+      }
+
       if (loadingMeetingLinks.value.has(booking.id || booking.booking_id)) {
         return // Already loading
       }
@@ -672,6 +726,8 @@ export default {
       selectedBooking,
       tabs,
       bookingFilters,
+      allowCancellation,
+      allowRescheduling,
 
       // Translation
       t,
@@ -689,9 +745,11 @@ export default {
       getJoinLink,
       canShowMeetingButton,
       isMeetingAvailable,
+      isMeetingCompleted,
       getMeetingButtonClass,
       getMeetingButtonText,
       handleMeetingAction,
+      loadingMeetingLinks,
 
       // Utilities
       formatDateTime,

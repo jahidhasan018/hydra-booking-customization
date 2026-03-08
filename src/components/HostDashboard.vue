@@ -92,8 +92,8 @@
                 </div>
               </div>
               <div class="ml-4">
-                <p class="text-2xl font-semibold text-gray-900">{{ stats.active_join_links || 0 }}</p>
-                <p class="text-sm text-gray-600">{{ t('active_links') }}</p>
+                <p class="text-2xl font-semibold text-gray-900">{{ stats.cancelled_meetings || 0 }}</p>
+                <p class="text-sm text-gray-600">{{ t('cancelled', 'Cancelled') }}</p>
               </div>
             </div>
           </div>
@@ -174,22 +174,6 @@
           />
         </div>
 
-        <!-- Join Links Tab -->
-        <div v-show="activeTab === 'join-links'" class="p-6">
-          <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-medium text-gray-900">{{ t('join_links_management') }}</h3>
-            <button @click="openJoinLinkModal" class="btn-primary">
-              {{ t('generate_new_link') }}
-            </button>
-          </div>
-
-          <JoinLinksList
-            :join-links="joinLinks"
-            @send-link="sendJoinLink"
-            @copy-link="copyJoinLink"
-          />
-        </div>
-
         <!-- Profile Tab -->
         <div v-show="activeTab === 'profile'" class="p-6">
           <div class="flex justify-between items-center mb-6">
@@ -223,10 +207,6 @@
               <label class="form-label">{{ t('bio') }}</label>
               <p class="text-gray-700">{{ profile.bio || t('not_set') }}</p>
             </div>
-            <div>
-              <label class="form-label">{{ t('timezone') }}</label>
-              <p class="text-gray-700">{{ profile.timezone || t('not_set') }}</p>
-            </div>
           </div>
         </div>
 
@@ -257,13 +237,6 @@
       @close="showBookingModal = false"
     />
 
-    <!-- Join Link Modal -->
-    <JoinLinkModal
-      v-if="showJoinLinkModal"
-      @close="showJoinLinkModal = false"
-      @save="generateJoinLink"
-    />
-
     <!-- Profile Edit Modal -->
     <ProfileModal
       v-if="showProfileModal"
@@ -280,18 +253,14 @@ import { __ } from '../utils/i18n.js'
 import { hostAPI } from '../utils/api.js'
 import { formatDateTime, getStatusClass, getStatusText, handleApiError, copyToClipboard } from '../utils/helpers.js'
 import BookingsList from './BookingsList.vue'
-import JoinLinksList from './JoinLinksList.vue'
 import BookingDetailsModal from './modals/BookingDetailsModal.vue'
-import JoinLinkModal from './modals/JoinLinkModal.vue'
 import ProfileModal from './modals/ProfileModal.vue'
 
 export default {
   name: 'HostDashboard',
   components: {
     BookingsList,
-    JoinLinksList,
     BookingDetailsModal,
-    JoinLinkModal,
     ProfileModal
   },
   setup() {
@@ -302,7 +271,6 @@ export default {
     const isLoading = ref(false)
     const activeTab = ref('bookings')
     const bookings = ref([])
-    const joinLinks = ref([])
     const profile = reactive({})
     const stats = reactive({})
     const alert = reactive({
@@ -314,7 +282,6 @@ export default {
 
     // Modal states
     const showBookingModal = ref(false)
-    const showJoinLinkModal = ref(false)
     const showProfileModal = ref(false)
     const selectedBooking = ref(null)
 
@@ -324,14 +291,12 @@ export default {
     // Tab configuration
     const tabs = [
       { id: 'bookings', name: t('bookings', 'Bookings') },
-      { id: 'join-links', name: t('join_links', 'Join Links') },
       { id: 'profile', name: t('profile', 'Profile') }
     ]
 
     // Filter configuration
     const filters = [
       { id: 'upcoming', name: t('upcoming', 'Upcoming'), icon: 'calendar' },
-      { id: 'today', name: t('today', 'Today'), icon: 'clock' },
       { id: 'completed', name: t('completed', 'Completed'), icon: 'check' },
       { id: 'cancelled', name: t('cancelled', 'Cancelled'), icon: 'x' },
       { id: 'history', name: t('all_history', 'All History'), icon: 'archive' }
@@ -381,19 +346,11 @@ export default {
         const now = new Date()
         
         // Apply client-side filtering for specific statuses and dates
-        if (filterType === 'today') {
-          // Only show today's bookings that are confirmed or pending
+        if (filterType === 'upcoming') {
+          // Only show future bookings (including today) that are confirmed or pending
           allBookings = allBookings.filter(booking => {
             const bookingDate = booking.meeting_dates
-            return bookingDate === today && 
-                   (booking.status === 'confirmed' || booking.status === 'pending')
-          })
-        } else if (filterType === 'upcoming') {
-          // Only show future bookings (not today) that are confirmed or pending
-          allBookings = allBookings.filter(booking => {
-            const bookingDate = booking.meeting_dates
-            const bookingDateTime = new Date(bookingDate + ' ' + (booking.start_time || '00:00:00'))
-            return bookingDate > today && 
+            return bookingDate >= today && 
                    (booking.status === 'confirmed' || booking.status === 'pending')
           })
         } else if (filterType === 'completed') {
@@ -415,19 +372,6 @@ export default {
       }
     }
 
-    const loadJoinLinks = async () => {
-      try {
-        const data = await hostAPI.getJoinLinks()
-        
-        // Check if data has join_links property or if it's the array directly
-        joinLinks.value = data.join_links || (Array.isArray(data) ? data : [])
-        
-      } catch (error) {
-        console.error('Join links load error:', error) // Debug log
-        showAlert('error', handleApiError(error))
-      }
-    }
-
     const loadProfile = async () => {
       try {
         const data = await hostAPI.getProfile()
@@ -444,7 +388,6 @@ export default {
             display_name: profileData.display_name || '',
             phone: hostData.phone_number || '',
             bio: profileData.description || hostData.about || '',
-            timezone: hostData.time_zone || '',
             avatar: hostData.avatar || '',
             featured_image: hostData.featured_image || '',
             status: hostData.status || '',
@@ -510,50 +453,6 @@ export default {
       }
     }
 
-    const openJoinLinkModal = () => {
-      showJoinLinkModal.value = true
-    }
-
-    const generateJoinLink = async (linkData) => {
-      try {
-        isLoading.value = true
-        await hostAPI.generateJoinLink(
-          linkData.meetingId,
-          linkData.linkType,
-          linkData.customUrl
-        )
-        showJoinLinkModal.value = false
-        showAlert('success', t('join_link_generated', 'Join link generated successfully'))
-        await loadJoinLinks()
-        await loadStats()
-      } catch (error) {
-        showAlert('error', handleApiError(error))
-      } finally {
-        isLoading.value = false
-      }
-    }
-
-    const sendJoinLink = async (linkId) => {
-      try {
-        isLoading.value = true
-        await hostAPI.sendJoinLink(linkId)
-        showAlert('success', t('email_sent', 'Join link sent to attendees'))
-      } catch (error) {
-        showAlert('error', handleApiError(error))
-      } finally {
-        isLoading.value = false
-      }
-    }
-
-    const copyJoinLink = async (url) => {
-      const success = await copyToClipboard(url)
-      if (success) {
-        showAlert('success', t('link_copied', 'Join link copied to clipboard'))
-      } else {
-        showAlert('error', t('error', 'Failed to copy link'))
-      }
-    }
-
     const openProfileModal = () => {
       showProfileModal.value = true
     }
@@ -578,7 +477,6 @@ export default {
       try {
         await Promise.all([
           loadBookings(activeFilter.value),
-          loadJoinLinks(),
           loadProfile(),
           loadStats()
         ])
@@ -593,8 +491,6 @@ export default {
     watch(activeTab, (newTab) => {
       if (newTab === 'bookings') {
         loadBookings(activeFilter.value)
-      } else if (newTab === 'join-links') {
-        loadJoinLinks()
       }
     })
 
@@ -613,12 +509,10 @@ export default {
       activeTab,
       activeFilter,
       bookings,
-      joinLinks,
       profile,
       stats,
       alert,
       showBookingModal,
-      showJoinLinkModal,
       showProfileModal,
       selectedBooking,
       tabs,
@@ -633,10 +527,6 @@ export default {
       loadBookings,
       updateBookingStatus,
       viewBookingDetails,
-      openJoinLinkModal,
-      generateJoinLink,
-      sendJoinLink,
-      copyJoinLink,
       openProfileModal,
       updateProfile,
 

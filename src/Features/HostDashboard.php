@@ -170,14 +170,6 @@ class HostDashboard {
 					<p><?php _e( 'Completed This Month', 'hydra-booking-customization' ); ?></p>
 				</div>
 			</div>
-			
-			<div class="hbc-stat-card">
-				<div class="hbc-stat-icon">🔗</div>
-				<div class="hbc-stat-content">
-					<h3><?php echo esc_html( $stats['active_join_links'] ); ?></h3>
-					<p><?php _e( 'Active Join Links', 'hydra-booking-customization' ); ?></p>
-				</div>
-			</div>
 		</div>
 		<?php
 	}
@@ -473,19 +465,6 @@ class HostDashboard {
 					<strong><?php _e( 'Attendees:', 'hydra-booking-customization' ); ?></strong>
 					<?php echo esc_html( $meeting->attendee_count ?? 0 ); ?>
 				</div>
-				
-				<?php if ( ! empty( $join_links ) ) : ?>
-					<div class="hbc-meeting-links">
-						<strong><?php _e( 'Join Links:', 'hydra-booking-customization' ); ?></strong>
-						<div class="hbc-quick-links">
-							<?php foreach ( $join_links as $link ) : ?>
-								<a href="<?php echo esc_url( $link['join_url'] ); ?>" target="_blank" class="hbc-quick-link hbc-link-<?php echo esc_attr( $link['type'] ); ?>">
-									<?php echo esc_html( ucfirst( $link['type'] ) ); ?>
-								</a>
-							<?php endforeach; ?>
-						</div>
-					</div>
-				<?php endif; ?>
 			</div>
 			
 			<div class="hbc-meeting-actions">
@@ -494,13 +473,13 @@ class HostDashboard {
 						<?php _e( 'View Details', 'hydra-booking-customization' ); ?>
 					</button>
 					
-					<?php if ( empty( $join_links ) ) : ?>
-						<button class="button button-primary hbc-generate-link" data-booking-id="<?php echo esc_attr( $meeting->booking_id ); ?>">
-							<?php _e( 'Generate Join Link', 'hydra-booking-customization' ); ?>
+					<?php if ( $meeting->booking_status !== 'canceled' && $meeting->booking_status !== 'completed' ) : ?>
+						<button class="button button-primary hbc-start-meeting" data-booking-id="<?php echo esc_attr( $meeting->booking_id ); ?>">
+							<?php _e( 'Start Meeting', 'hydra-booking-customization' ); ?>
 						</button>
 					<?php else : ?>
-						<button class="button hbc-copy-all-links" data-booking-id="<?php echo esc_attr( $meeting->booking_id ); ?>">
-							<?php _e( 'Copy Links', 'hydra-booking-customization' ); ?>
+						<button class="button" disabled>
+							<?php _e( 'Meeting Completed', 'hydra-booking-customization' ); ?>
 						</button>
 					<?php endif; ?>
 					
@@ -608,7 +587,8 @@ class HostDashboard {
 			"SELECT COUNT(DISTINCT b.id)
 			FROM {$bookings_table} b
 			INNER JOIN {$attendees_table} a ON b.id = a.booking_id
-			WHERE a.host_id = %d AND b.meeting_dates = %s",
+			WHERE a.host_id = %d AND b.meeting_dates = %s
+			AND b.status NOT IN ('canceled', 'cancelled', 'refunded')",
 			$host_id, $today
 		) );
 
@@ -616,7 +596,8 @@ class HostDashboard {
 			"SELECT COUNT(DISTINCT b.id)
 			FROM {$bookings_table} b
 			INNER JOIN {$attendees_table} a ON b.id = a.booking_id
-			WHERE a.host_id = %d AND CONCAT(b.meeting_dates, ' ', b.start_time) > %s",
+			WHERE a.host_id = %d AND CONCAT(b.meeting_dates, ' ', b.start_time) > %s
+			AND b.status = 'confirmed'",
 			$host_id, $current_time
 		) );
 
@@ -625,28 +606,24 @@ class HostDashboard {
 			FROM {$bookings_table} b
 			INNER JOIN {$attendees_table} a ON b.id = a.booking_id
 			WHERE a.host_id = %d
-			AND CONCAT(b.meeting_dates, ' ', b.start_time) < %s
-			AND b.meeting_dates >= %s
-			AND b.status = 'confirmed'",
-			$host_id, $current_time, $month_start
+			AND b.status = 'completed'",
+			$host_id
 		) );
 
-		$active_join_links = $wpdb->get_var( $wpdb->prepare(
+		$cancelled_meetings = $wpdb->get_var( $wpdb->prepare(
 			"SELECT COUNT(DISTINCT b.id)
 			FROM {$bookings_table} b
 			INNER JOIN {$attendees_table} a ON b.id = a.booking_id
 			WHERE a.host_id = %d
-			AND CONCAT(b.meeting_dates, ' ', b.start_time) > %s
-			AND b.meeting_locations IS NOT NULL
-			AND b.meeting_locations != ''",
-			$host_id, $current_time
+			AND b.status IN ('canceled', 'cancelled')",
+			$host_id
 		) );
 
 		return array(
 			'today_meetings'     => (int) $today_meetings,
 			'upcoming_meetings'  => (int) $upcoming_meetings,
 			'completed_meetings' => (int) $completed_meetings,
-			'active_join_links'  => (int) $active_join_links,
+			'cancelled_meetings' => (int) $cancelled_meetings,
 		);
 	}
 
@@ -681,6 +658,7 @@ class HostDashboard {
 		$attendees_table = $wpdb->prefix . 'tfhb_attendees';
 		$bookings_table = $wpdb->prefix . 'tfhb_bookings';
 		$meetings_table = $wpdb->prefix . 'tfhb_meetings';
+		$meta_table = $wpdb->prefix . 'tfhb_booking_meta';
 		
 		$current_time = current_time( 'mysql' );
 		$today = current_time( 'Y-m-d' );
@@ -697,10 +675,14 @@ class HostDashboard {
 				m.title as meeting_title,
 				m.description as meeting_description,
 				m.duration,
-				COUNT(a.id) as attendee_count
+				COUNT(a.id) as attendee_count,
+				mstart.value as meeting_started_at,
+				b.created_at,
+				b.attendee_id
 			FROM {$bookings_table} b
 			LEFT JOIN {$meetings_table} m ON b.meeting_id = m.id
 			LEFT JOIN {$attendees_table} a ON b.id = a.booking_id
+			LEFT JOIN {$meta_table} mstart ON b.id = mstart.booking_id AND mstart.meta_key = 'hbc_meeting_started_at'
 			WHERE a.host_id = %d
 		";
 		
@@ -1015,7 +997,7 @@ class HostDashboard {
 		
 		$first_name = sanitize_text_field( $_POST['first_name'] ?? '' );
 		$last_name = sanitize_text_field( $_POST['last_name'] ?? '' );
-		$email = sanitize_email( $_POST['user_email'] ?? '' );
+		$email = sanitize_email( $_POST['email'] ?? '' );
 		$phone = sanitize_text_field( $_POST['phone'] ?? '' );
 		$bio = sanitize_textarea_field( $_POST['bio'] ?? '' );
 		$timezone = sanitize_text_field( $_POST['timezone'] ?? '' );

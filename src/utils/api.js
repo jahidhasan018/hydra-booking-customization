@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 // Get WordPress data from localized variables
-const getWpData = () => {
+export const getWpData = () => {
   return window.hbcAttendeeData || window.hbcHostData || {}
 }
 
@@ -45,101 +45,168 @@ export const attendeeAPI = {
     formData.append('action', 'hbc_get_attendee_bookings')
     formData.append('type', type)
     formData.append('nonce', wpData.nonce)
-    
+
     return fetch(wpData.ajaxUrl, {
       method: 'POST',
       body: formData
     })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        return { status: true, bookings: data.data || [] }
-      } else {
-        throw new Error(data.data || 'Failed to fetch bookings')
-      }
-    })
-    .catch(error => {
-      console.error('Bookings API Error:', error)
-      return { status: false, bookings: [], message: 'Failed to fetch bookings' }
-    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          return { status: true, bookings: data.data || [] }
+        } else {
+          throw new Error(data.data || 'Failed to fetch bookings')
+        }
+      })
+      .catch(error => {
+        console.error('Bookings API Error:', error)
+        return { status: false, bookings: [], message: 'Failed to fetch bookings' }
+      })
   },
-  
+
   getProfile: () => {
     // Use current user data from WordPress
     const wpData = getWpData()
     return Promise.resolve({
-      id: wpData.currentUser?.ID || 0,
+      id: wpData.currentUser?.id || 0,
       name: wpData.currentUser?.display_name || '',
-      email: wpData.currentUser?.user_email || '',
+      email: wpData.currentUser?.email || '',
       first_name: wpData.currentUser?.first_name || '',
       last_name: wpData.currentUser?.last_name || '',
+      phone: wpData.currentUser?.phone || '',
+      bio: wpData.currentUser?.bio || '',
       role: wpData.currentUser?.roles?.[0] || 'subscriber'
     })
   },
-  
+
   updateProfile: (data) => {
     // Use WordPress AJAX endpoint for attendee profile update
     const wpData = getWpData()
     const formData = new FormData()
     formData.append('action', 'hbc_update_profile')
     formData.append('hbc_profile_nonce', wpData.profileNonce || wpData.nonce)
-    
+
     // Add profile data to form
     Object.keys(data).forEach(key => {
       formData.append(key, data[key])
     })
-    
+
     return fetch(wpData.ajaxUrl, {
       method: 'POST',
       body: formData
     })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        return data.data
-      } else {
-        throw new Error(data.data || 'Failed to update profile')
-      }
-    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          return data.data
+        } else {
+          throw new Error(data.data || 'Failed to update profile')
+        }
+      })
   },
-  
-  changePassword: (data) => 
-    api.post('fd-dashboard/change-password', data),
-  
-  cancelBooking: (bookingId) => 
-    api.post('booking/change-booking-status', { booking_id: bookingId, status: 'cancelled' }),
-  
-  rescheduleBooking: (bookingId, newDate, newTime) => 
-    api.post(`booking/rebooking`, { booking_id: bookingId, new_date: newDate, new_time: newTime }),
-  
+
+  changePassword: (data) => {
+    const wpData = getWpData()
+    const formData = new FormData()
+    formData.append('action', 'hbc_change_password')
+    formData.append('hbc_password_nonce', wpData.passwordNonce || wpData.nonce)
+
+    Object.keys(data).forEach(key => {
+      formData.append(key, data[key])
+    })
+
+    return fetch(wpData.ajaxUrl, {
+      method: 'POST',
+      body: formData
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          return data.data
+        } else {
+          throw new Error(data.data || 'Failed to change password')
+        }
+      })
+  },
+
+  cancelBooking: (bookingId) => {
+    const wpData = getWpData()
+    const formData = new FormData()
+    formData.append('action', 'hbc_cancel_booking')
+    formData.append('nonce', wpData.nonce)
+    formData.append('booking_id', bookingId)
+
+    return fetch(wpData.ajaxUrl, {
+      method: 'POST',
+      body: formData
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          return data.data
+        } else {
+          throw new Error(data.data || 'Failed to cancel booking')
+        }
+      })
+  },
+
+  rescheduleBooking: (data) => {
+    const wpData = getWpData()
+    const formData = new FormData()
+    formData.append('action', 'hbc_reschedule_booking')
+    formData.append('nonce', wpData.nonce)
+    formData.append('booking_id', data.bookingId)
+    formData.append('new_date', data.newDate)
+    formData.append('new_time', data.newTime)
+    formData.append('duration', data.duration || 30)
+    formData.append('reason', data.reason || '')
+    formData.append('notify_host', data.notify_host ? 1 : 0)
+    formData.append('send_confirmation', data.send_confirmation ? 1 : 0)
+
+    return fetch(wpData.ajaxUrl, {
+      method: 'POST',
+      body: formData
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          return data.data
+        } else {
+          throw new Error(data.data || 'Failed to reschedule booking')
+        }
+      })
+  },
+
   getStats: () => {
     // Use WordPress AJAX endpoint for attendee stats
     const wpData = getWpData()
     const formData = new FormData()
     formData.append('action', 'hbc_get_attendee_stats')
     formData.append('nonce', wpData.nonce)
-    
+
     return fetch(wpData.ajaxUrl, {
       method: 'POST',
       body: formData
     })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        return data.data
-      } else {
-        throw new Error(data.data || 'Failed to fetch stats')
-      }
-    })
-    .catch(error => {
-      console.error('Stats API Error:', error)
-      return { total_bookings: 0, upcoming_bookings: 0, completed_bookings: 0, cancelled_bookings: 0 }
-    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          return data.data
+        } else {
+          throw new Error(data.data || 'Failed to fetch stats')
+        }
+      })
+      .catch(error => {
+        console.error('Stats API Error:', error)
+        return { total_bookings: 0, upcoming_bookings: 0, completed_bookings: 0, cancelled_bookings: 0 }
+      })
   },
 
   getMeetingLink: (bookingId) => {
     return api.get(`jitsi/meeting-link/${bookingId}`).then(response => {
-      return response.data || { status: false, meeting_url: null }
+      // The axios interceptor already unwraps response.data, so 'response' here
+      // is the actual API payload: { status, meeting_url, room_name, ... }
+      return response || { status: false, meeting_url: null }
     }).catch(() => ({ status: false, meeting_url: null }))
   },
 }
@@ -152,13 +219,13 @@ export const hostAPI = {
     if (period === 'today') {
       filter_type = 'upcoming' // Today's meetings are upcoming meetings for current date
     }
-    
+
     return api.post('booking/lists', { filter_data: { filter_type } }).then(response => {
       // Handle the response structure from core plugin
       if (!response.status || !response.bookings) {
         return { status: false, bookings: [], message: 'Failed to fetch bookings' }
       }
-      
+
       // Flatten the nested booking structure
       const flatBookings = []
       response.bookings.forEach(dateGroup => {
@@ -166,23 +233,23 @@ export const hostAPI = {
           flatBookings.push(...dateGroup.bookings)
         }
       })
-      
+
       // For 'today' filter, further filter to only show today's bookings
       if (period === 'today') {
         const today = new Date().toISOString().split('T')[0]
         return { status: true, bookings: flatBookings.filter(booking => booking.meeting_dates === today) }
       }
-      
+
       return { status: true, bookings: flatBookings }
     })
   },
-  
+
   getProfile: () => {
     const wpData = getWpData()
     const formData = new FormData()
     formData.append('action', 'hbc_get_host_profile')
     formData.append('nonce', wpData.nonce)
-    
+
     return axios.post(wpData.ajaxUrl, formData, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -194,18 +261,18 @@ export const hostAPI = {
       throw new Error(response.data?.data || 'Failed to load profile')
     })
   },
-  
+
   updateProfile: (data) => {
     const wpData = getWpData()
     const formData = new FormData()
     formData.append('action', 'hbc_update_host_profile')
     formData.append('hbc_host_profile_nonce', wpData.profileNonce)
-    
+
     // Add profile data to form
     Object.keys(data).forEach(key => {
       formData.append(key, data[key])
     })
-    
+
     return axios.post(wpData.ajaxUrl, formData, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -217,41 +284,41 @@ export const hostAPI = {
       throw new Error(response.data?.data || 'Failed to update profile')
     })
   },
-  
-  updateBookingStatus: (bookingId, status) => 
-     api.post('booking/change-booking-status', { booking_id: bookingId, status }),
-  
+
+  updateBookingStatus: (bookingId, status) =>
+    api.post('booking/change-booking-status', { booking_id: bookingId, status }),
+
   getBookingDetails: (bookingId) => {
     const wpData = getWpData()
     const formData = new FormData()
     formData.append('action', 'hbc_get_booking_details')
     formData.append('booking_id', bookingId)
     formData.append('nonce', wpData.nonce)
-    
+
     return axios.post(wpData.ajaxUrl, formData, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       }
     })
   },
-  
-  generateJoinLink: (meetingId, linkType, customUrl = '') => 
-    api.post('meeting/generate-join-link', { 
-      meeting_id: meetingId, 
-      link_type: linkType, 
-      custom_url: customUrl 
+
+  generateJoinLink: (meetingId, linkType, customUrl = '') =>
+    api.post('meeting/generate-join-link', {
+      meeting_id: meetingId,
+      link_type: linkType,
+      custom_url: customUrl
     }),
-  
-  sendJoinLink: (linkId) => 
+
+  sendJoinLink: (linkId) =>
     api.post('meeting/send-join-link', { link_id: linkId }),
-  
+
   getJoinLinks: () => {
     // Get meetings data from core plugin
     return api.get('meetings/lists').then(response => {
       if (!response.status || !response.meetings) {
         return []
       }
-      
+
       // Transform meetings data to join links format
       return response.meetings.map(meeting => ({
         meeting_id: meeting.id,
@@ -263,17 +330,17 @@ export const hostAPI = {
       }))
     }).catch(() => [])
   },
-  
+
   getStats: () => {
     // Calculate stats from bookings data
     return hostAPI.getBookings('all').then(response => {
       if (!response.status || !response.bookings) {
         return { total_bookings: 0, upcoming_meetings: 0, completed_meetings: 0, total_revenue: 0, cancelled_bookings: 0 }
       }
-      
+
       const bookings = response.bookings
       const currentDate = new Date().toISOString().split('T')[0]
-      
+
       const stats = {
         total_bookings: bookings.length,
         upcoming_meetings: bookings.filter(b => b.meeting_dates >= currentDate && b.status !== 'cancelled' && b.status !== 'completed').length,
@@ -281,14 +348,16 @@ export const hostAPI = {
         cancelled_bookings: bookings.filter(b => b.status === 'cancelled').length,
         total_revenue: bookings.reduce((sum, b) => sum + (parseFloat(b.meeting_price) || 0), 0)
       }
-      
+
       return stats
     })
   },
 
   getMeetingLink: (bookingId) => {
     return api.get(`jitsi/meeting-link/${bookingId}`).then(response => {
-      return response.data || { status: false, meeting_url: null }
+      // The axios interceptor already unwraps response.data, so 'response' here
+      // is the actual API payload: { status, meeting_url, room_name, ... }
+      return response || { status: false, meeting_url: null }
     }).catch(() => ({ status: false, meeting_url: null }))
   },
 }

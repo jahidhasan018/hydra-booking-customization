@@ -54,6 +54,7 @@ $host_data = [
     'pluginUrl' => plugin_dir_url(__FILE__),
     'restUrl' => rest_url('hydra-booking/v1/'),
     'restNonce' => wp_create_nonce('wp_rest'),
+    'testMode' => (bool) get_option( 'hbc_enable_test_mode', false ),
     'currentUser' => [
         'id' => get_current_user_id(),
         'email' => wp_get_current_user()->user_email,
@@ -101,8 +102,8 @@ $host_data = [
         'meeting_history'            => __( 'Meeting History', 'hydra-booking-customization' ),
         'meeting'                    => __( 'Meeting', 'hydra-booking-customization' ),
         'min'                        => __( 'min', 'hydra-booking-customization' ),
-        'today'                      => __( 'Upcoming', 'hydra-booking-customization' ),
-        'all_history'                => __( 'Completed', 'hydra-booking-customization' ),
+        'today'                      => __( 'Today', 'hydra-booking-customization' ),
+        'all_history'                => __( 'All History', 'hydra-booking-customization' ),
 
         // Booking List.
         'no_bookings_found'          => __( 'No bookings found', 'hydra-booking-customization' ),
