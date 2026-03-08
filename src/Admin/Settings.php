@@ -53,6 +53,7 @@ class Settings {
 		register_setting( 'hbc_settings', 'hbc_cancellation_hours_limit' );
 		register_setting( 'hbc_settings', 'hbc_allow_booking_rescheduling' );
 		register_setting( 'hbc_settings', 'hbc_rescheduling_hours_limit' );
+		register_setting( 'hbc_settings', 'hbc_enable_test_mode' );
 
 		// Add settings sections.
 		add_settings_section(
@@ -76,10 +77,18 @@ class Settings {
 			'hbc_settings'
 		);
 
+		add_settings_section(
+			'hbc_testing_section',
+			__( 'Testing & Development', 'hydra-booking-customization' ),
+			array( $this, 'render_testing_section' ),
+			'hbc_settings'
+		);
+
 		// Add settings fields.
 		$this->add_auto_registration_fields();
 		$this->add_dashboard_fields();
 		$this->add_booking_management_fields();
+		$this->add_testing_fields();
 	}
 
 	/**
@@ -147,20 +156,6 @@ class Settings {
 			)
 		);
 
-		add_settings_field(
-			'hbc_cancellation_hours_limit',
-			__( 'Cancellation Hours Limit', 'hydra-booking-customization' ),
-			array( $this, 'render_number_field' ),
-			'hbc_settings',
-			'hbc_booking_management_section',
-			array(
-				'option_name'   => 'hbc_cancellation_hours_limit',
-				'description'   => __( 'Minimum hours before the meeting that cancellation is allowed.', 'hydra-booking-customization' ),
-				'default_value' => 24,
-				'min'           => 1,
-				'max'           => 168,
-			)
-		);
 
 		add_settings_field(
 			'hbc_allow_booking_rescheduling',
@@ -175,20 +170,7 @@ class Settings {
 			)
 		);
 
-		add_settings_field(
-			'hbc_rescheduling_hours_limit',
-			__( 'Rescheduling Hours Limit', 'hydra-booking-customization' ),
-			array( $this, 'render_number_field' ),
-			'hbc_settings',
-			'hbc_booking_management_section',
-			array(
-				'option_name'   => 'hbc_rescheduling_hours_limit',
-				'description'   => __( 'Minimum hours before the meeting that rescheduling is allowed.', 'hydra-booking-customization' ),
-				'default_value' => 48,
-				'min'           => 1,
-				'max'           => 168,
-			)
-		);
+
 	}
 
 	/**
@@ -268,6 +250,57 @@ class Settings {
 	 */
 	public function render_booking_management_section() {
 		echo '<p>' . __( 'Configure booking management options for attendees.', 'hydra-booking-customization' ) . '</p>';
+	}
+
+	/**
+	 * Render testing section.
+	 *
+	 * @since 1.1.0
+	 */
+	public function render_testing_section() {
+		echo '<p>' . __( 'Settings for testing and development purposes. These options bypass normal production logic.', 'hydra-booking-customization' ) . '</p>';
+	}
+
+	/**
+	 * Add testing fields.
+	 *
+	 * @since 1.1.0
+	 */
+	private function add_testing_fields() {
+		add_settings_field(
+			'hbc_enable_test_mode',
+			__( 'Enable Join Meeting Test Mode', 'hydra-booking-customization' ),
+			array( $this, 'render_test_mode_field' ),
+			'hbc_settings',
+			'hbc_testing_section',
+			array(
+				'option_name'   => 'hbc_enable_test_mode',
+				'description'   => __( 'When enabled, the Join Meeting / Start Meeting button will be active and fully functional at all times, bypassing time restrictions, booking status checks, and meeting page validation. The meeting page will load without any restrictions.', 'hydra-booking-customization' ),
+				'default_value' => false,
+			)
+		);
+	}
+
+	/**
+	 * Render test mode field with warning styling.
+	 *
+	 * @since 1.1.0
+	 * @param array $args Field arguments.
+	 */
+	public function render_test_mode_field( $args ) {
+		$option_name   = $args['option_name'];
+		$description   = $args['description'] ?? '';
+		$default_value = $args['default_value'] ?? false;
+		$value         = get_option( $option_name, $default_value );
+		?>
+		<label for="<?php echo esc_attr( $option_name ); ?>">
+			<input type="checkbox" id="<?php echo esc_attr( $option_name ); ?>" name="<?php echo esc_attr( $option_name ); ?>" value="1" <?php checked( $value, true ); ?>>
+			<?php echo esc_html( $description ); ?>
+		</label>
+		<p class="description" style="color: #d63638; font-weight: bold; margin-top: 8px;">
+			<?php esc_html_e( '⚠️ WARNING: Do NOT leave this enabled on production sites. This is intended for testing purposes only.', 'hydra-booking-customization' ); ?>
+		</p>
+		<?php
 	}
 
 	/**

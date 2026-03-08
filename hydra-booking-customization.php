@@ -342,6 +342,7 @@ function hbc_set_default_options() {
 		'hbc_meeting_grace_period'   => 15,
 		'hbc_token_expiration'       => 3600,
 		'hbc_debug_mode'             => 'no',
+		'hbc_enable_test_mode'       => false,
 	);
 	
 	foreach ( $default_options as $option_name => $default_value ) {
@@ -404,6 +405,7 @@ function hbc_uninstall_plugin() {
 		'hbc_meeting_grace_period',
 		'hbc_token_expiration',
 		'hbc_debug_mode',
+		'hbc_enable_test_mode',
 	);
 	
 	foreach ( $options_to_remove as $option ) {

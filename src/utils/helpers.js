@@ -22,7 +22,13 @@ export const formatTime = (timeString) => {
 }
 
 export const formatDateTime = (dateString, timeString) => {
-  if (!dateString || !timeString) return ''
+  if (!dateString) return ''
+  if (!timeString) {
+    const safeDateStr = typeof dateString === 'string' ? dateString.replace(' ', 'T') : dateString;
+    const date = new Date(safeDateStr);
+    if (isNaN(date.getTime())) return '';
+    return `${date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} at ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+  }
   return `${formatDate(dateString)} at ${formatTime(timeString)}`
 }
 
@@ -79,7 +85,7 @@ export const validateEmail = (email) => {
 }
 
 export const validatePhone = (phone) => {
-  const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/
+  const phoneRegex = /^[\+]?[0-9][\d]{0,15}$/
   return phoneRegex.test(phone.replace(/\s/g, ''))
 }
 

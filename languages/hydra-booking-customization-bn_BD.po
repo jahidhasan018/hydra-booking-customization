@@ -1,0 +1,798 @@
+# Bangla (Bengali) Translation for Hydra Booking Customization
+# Copyright (C) 2024 Hydra Booking Customization
+# This file is distributed under the same license as the Hydra Booking Customization plugin.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Hydra Booking Customization 1.1.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/hydra-booking-customization\n"
+"Last-Translator: Jahid Hasan <jahid018@example.com>\n"
+"Language-Team: Bangla <bn@li.org>\n"
+"Language: bn_BD\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-03-03T09:00:00+00:00\n"
+"PO-Revision-Date: 2026-03-03T09:45:00+06:00\n"
+"X-Generator: Manual\n"
+"X-Domain: hydra-booking-customization\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#
+# ─── Plugin Bootstrap / Activation ────────────────────────────────
+#
+
+msgid "This plugin requires PHP version %s or higher."
+msgstr "এই প্লাগইনের জন্য PHP সংস্করণ %s বা তার উচ্চতর প্রয়োজন।"
+
+msgid "This plugin requires WordPress version %s or higher."
+msgstr "এই প্লাগইনের জন্য ওয়ার্ডপ্রেস সংস্করণ %s বা তার উচ্চতর প্রয়োজন।"
+
+msgid "This plugin requires the Hydra Booking plugin to be installed and activated."
+msgstr "এই প্লাগইনের জন্য হাইড্রা বুকিং প্লাগইন ইনস্টল ও সক্রিয় করা প্রয়োজন।"
+
+msgid "Hydra Booking plugin version %s or higher is required."
+msgstr "হাইড্রা বুকিং প্লাগইন সংস্করণ %s বা তার উচ্চতর প্রয়োজন।"
+
+msgid "Hydra Booking Customization"
+msgstr "হাইড্রা বুকিং কাস্টমাইজেশন"
+
+msgid "Hydra Booking Customization cannot be activated due to unmet requirements."
+msgstr "অপূর্ণ শর্তের কারণে হাইড্রা বুকিং কাস্টমাইজেশন সক্রিয় করা সম্ভব নয়।"
+
+msgid "Hydra Booking Customization failed to initialize: %s"
+msgstr "হাইড্রা বুকিং কাস্টমাইজেশন ইনিশিয়ালাইজ করতে ব্যর্থ: %s"
+
+msgid "Hydra Booking Customization requires PHP version %1$s or higher. You are running version %2$s. Please upgrade PHP."
+msgstr "হাইড্রা বুকিং কাস্টমাইজেশনের জন্য PHP সংস্করণ %1$s বা তার উচ্চতর প্রয়োজন। আপনি সংস্করণ %2$s ব্যবহার করছেন। অনুগ্রহ করে PHP আপগ্রেড করুন।"
+
+msgid "Hydra Booking Customization requires WordPress version %1$s or higher. You are running version %2$s. Please upgrade WordPress."
+msgstr "হাইড্রা বুকিং কাস্টমাইজেশনের জন্য ওয়ার্ডপ্রেস সংস্করণ %1$s বা তার উচ্চতর প্রয়োজন। আপনি সংস্করণ %2$s ব্যবহার করছেন। অনুগ্রহ করে ওয়ার্ডপ্রেস আপগ্রেড করুন।"
+
+msgid "Hydra Booking Customization requires the Hydra Booking plugin to be installed and activated."
+msgstr "হাইড্রা বুকিং কাস্টমাইজেশনের জন্য হাইড্রা বুকিং প্লাগইন ইনস্টল ও সক্রিয় করা প্রয়োজন।"
+
+msgid "Hydra Booking Customization: Composer autoloader not found. Please run \"composer install\" in the plugin directory."
+msgstr "হাইড্রা বুকিং কাস্টমাইজেশন: কম্পোজার অটোলোডার পাওয়া যায়নি। অনুগ্রহ করে প্লাগইন ডিরেক্টরিতে \"composer install\" চালান।"
+
+msgid "Hydra Booking Customization: Main plugin class not found. Please check the plugin installation."
+msgstr "হাইড্রা বুকিং কাস্টমাইজেশন: মূল প্লাগইন ক্লাস পাওয়া যায়নি। অনুগ্রহ করে প্লাগইন ইনস্টলেশন পরীক্ষা করুন।"
+
+msgid "Install Hydra Booking"
+msgstr "হাইড্রা বুকিং ইনস্টল করুন"
+
+msgid "Plugin Activation Error"
+msgstr "প্লাগইন সক্রিয়করণ ত্রুটি"
+
+#
+# ─── Login Form ───────────────────────────────────────────────────
+#
+
+msgid "Login to access your dashboard"
+msgstr "আপনার ড্যাশবোর্ড অ্যাক্সেস করতে লগইন করুন"
+
+msgid "Username or Email"
+msgstr "ব্যবহারকারীর নাম বা ইমেইল"
+
+msgid "Password"
+msgstr "পাসওয়ার্ড"
+
+msgid "Log In"
+msgstr "লগ ইন"
+
+msgid "Login"
+msgstr "লগইন"
+
+msgid "Remember Me"
+msgstr "আমাকে মনে রাখুন"
+
+msgid "Lost your password?"
+msgstr "পাসওয়ার্ড ভুলে গেছেন?"
+
+msgid "Login Required"
+msgstr "লগইন প্রয়োজন"
+
+msgid "Please log in to access your %s."
+msgstr "আপনার %s অ্যাক্সেস করতে অনুগ্রহ করে লগইন করুন।"
+
+msgid "Please log in to access your attendee dashboard."
+msgstr "আপনার অংশগ্রহণকারী ড্যাশবোর্ড অ্যাক্সেস করতে অনুগ্রহ করে লগইন করুন।"
+
+msgid "Please log in to access your host dashboard."
+msgstr "আপনার হোস্ট ড্যাশবোর্ড অ্যাক্সেস করতে অনুগ্রহ করে লগইন করুন।"
+
+#
+# ─── Dashboard Common ────────────────────────────────────────────
+#
+
+msgid "Loading..."
+msgstr "লোড হচ্ছে..."
+
+msgid "Loading dashboard..."
+msgstr "ড্যাশবোর্ড লোড হচ্ছে..."
+
+msgid "Logout"
+msgstr "লগআউট"
+
+msgid "Refresh"
+msgstr "রিফ্রেশ"
+
+msgid "Edit Profile"
+msgstr "প্রোফাইল সম্পাদনা"
+
+msgid "Profile Settings"
+msgstr "প্রোফাইল সেটিংস"
+
+msgid "Save"
+msgstr "সংরক্ষণ"
+
+msgid "Cancel"
+msgstr "বাতিল"
+
+msgid "Close"
+msgstr "বন্ধ"
+
+msgid "Confirm"
+msgstr "নিশ্চিত"
+
+msgid "Delete"
+msgstr "মুছুন"
+
+msgid "Edit"
+msgstr "সম্পাদনা"
+
+msgid "View"
+msgstr "দেখুন"
+
+msgid "View Details"
+msgstr "বিস্তারিত দেখুন"
+
+msgid "Not set"
+msgstr "সেট করা হয়নি"
+
+msgid "Error"
+msgstr "ত্রুটি"
+
+msgid "Success"
+msgstr "সফল"
+
+msgid "Are you sure?"
+msgstr "আপনি কি নিশ্চিত?"
+
+msgid "Back to Admin"
+msgstr "অ্যাডমিনে ফিরে যান"
+
+msgid "JavaScript Required"
+msgstr "জাভাস্ক্রিপ্ট প্রয়োজন"
+
+msgid "This dashboard requires JavaScript to function properly. Please enable JavaScript in your browser and refresh the page."
+msgstr "এই ড্যাশবোর্ডটি সঠিকভাবে কাজ করতে জাভাস্ক্রিপ্ট প্রয়োজন। অনুগ্রহ করে আপনার ব্রাউজারে জাভাস্ক্রিপ্ট সক্রিয় করুন এবং পৃষ্ঠাটি রিফ্রেশ করুন।"
+
+msgid "An error occurred"
+msgstr "একটি ত্রুটি ঘটেছে"
+
+msgid "An internal error occurred."
+msgstr "একটি অভ্যন্তরীণ ত্রুটি ঘটেছে।"
+
+msgid "An unexpected error occurred. Please try again later."
+msgstr "একটি অপ্রত্যাশিত ত্রুটি ঘটেছে। অনুগ্রহ করে পরে আবার চেষ্টা করুন।"
+
+#
+# ─── Attendee Dashboard ──────────────────────────────────────────
+#
+
+msgid "Attendee Dashboard"
+msgstr "অংশগ্রহণকারী ড্যাশবোর্ড"
+
+msgid "Manage your bookings and profile"
+msgstr "আপনার বুকিং এবং প্রোফাইল পরিচালনা করুন"
+
+msgid "Total Bookings"
+msgstr "মোট বুকিং"
+
+msgid "Upcoming"
+msgstr "আসন্ন"
+
+msgid "Completed"
+msgstr "সম্পন্ন"
+
+msgid "Cancelled"
+msgstr "বাতিল"
+
+msgid "My Bookings"
+msgstr "আমার বুকিং"
+
+msgid "Profile"
+msgstr "প্রোফাইল"
+
+msgid "No bookings"
+msgstr "কোন বুকিং নেই"
+
+msgid "You don't have any bookings yet."
+msgstr "আপনার এখনও কোন বুকিং নেই।"
+
+msgid "Date & Time"
+msgstr "তারিখ ও সময়"
+
+msgid "Duration"
+msgstr "সময়কাল"
+
+msgid "Start Meeting"
+msgstr "মিটিং শুরু করুন"
+
+msgid "Scheduled"
+msgstr "নির্ধারিত"
+
+msgid "Available in"
+msgstr "উপলব্ধ"
+
+msgid "Meeting opened in new tab"
+msgstr "মিটিং নতুন ট্যাবে খোলা হয়েছে"
+
+msgid "Meeting link not available. Please contact support."
+msgstr "মিটিং লিংক উপলব্ধ নেই। অনুগ্রহ করে সাপোর্টের সাথে যোগাযোগ করুন।"
+
+msgid "Failed to get meeting link. Please try again."
+msgstr "মিটিং লিংক পেতে ব্যর্থ। অনুগ্রহ করে আবার চেষ্টা করুন।"
+
+msgid "Test mode: Meeting link would be available here in production."
+msgstr "টেস্ট মোড: প্রোডাকশনে মিটিং লিংক এখানে উপলব্ধ হবে।"
+
+msgid "Are you sure you want to logout?"
+msgstr "আপনি কি নিশ্চিত যে আপনি লগআউট করতে চান?"
+
+msgid "Logout failed. Please try again."
+msgstr "লগআউট ব্যর্থ। অনুগ্রহ করে আবার চেষ্টা করুন।"
+
+msgid "Profile updated successfully"
+msgstr "প্রোফাইল সফলভাবে আপডেট হয়েছে"
+
+msgid "Profile updated successfully."
+msgstr "প্রোফাইল সফলভাবে আপডেট হয়েছে।"
+
+msgid "Access denied. This dashboard is for attendees only."
+msgstr "প্রবেশ নিষেধ। এই ড্যাশবোর্ড শুধুমাত্র অংশগ্রহণকারীদের জন্য।"
+
+msgid "Access denied. This function is for attendees only."
+msgstr "প্রবেশ নিষেধ। এই ফাংশন শুধুমাত্র অংশগ্রহণকারীদের জন্য।"
+
+msgid "This dashboard is exclusively for users with attendee privileges. Please contact an administrator if you believe this is an error."
+msgstr "এই ড্যাশবোর্ডটি শুধুমাত্র অংশগ্রহণকারী সুবিধা সম্পন্ন ব্যবহারকারীদের জন্য। আপনি যদি মনে করেন এটি একটি ত্রুটি, অনুগ্রহ করে প্রশাসকের সাথে যোগাযোগ করুন।"
+
+#
+# ─── Host Dashboard ──────────────────────────────────────────────
+#
+
+msgid "Host Dashboard"
+msgstr "হোস্ট ড্যাশবোর্ড"
+
+msgid "Manage your meetings, bookings, and join links"
+msgstr "আপনার মিটিং, বুকিং এবং জয়েন লিংক পরিচালনা করুন"
+
+msgid "Today's Meetings"
+msgstr "আজকের মিটিং"
+
+msgid "Active Links"
+msgstr "সক্রিয় লিংক"
+
+msgid "Bookings"
+msgstr "বুকিং"
+
+msgid "Join Links"
+msgstr "জয়েন লিংক"
+
+msgid "Join Links Management"
+msgstr "জয়েন লিংক ব্যবস্থাপনা"
+
+msgid "Generate New Link"
+msgstr "নতুন লিংক তৈরি করুন"
+
+msgid "Meeting History"
+msgstr "মিটিং ইতিহাস"
+
+msgid "Join Meeting"
+msgstr "মিটিংয়ে যোগ দিন"
+
+msgid "Joining meeting..."
+msgstr "মিটিংয়ে যোগ দেওয়া হচ্ছে..."
+
+msgid "Access denied. This dashboard is for hosts only."
+msgstr "প্রবেশ নিষেধ। এই ড্যাশবোর্ড শুধুমাত্র হোস্টদের জন্য।"
+
+msgid "Access denied. This function is for hosts only."
+msgstr "প্রবেশ নিষেধ। এই ফাংশন শুধুমাত্র হোস্টদের জন্য।"
+
+msgid "This dashboard is exclusively for users with host privileges. Please contact an administrator if you believe this is an error."
+msgstr "এই ড্যাশবোর্ডটি শুধুমাত্র হোস্ট সুবিধা সম্পন্ন ব্যবহারকারীদের জন্য। আপনি যদি মনে করেন এটি একটি ত্রুটি, অনুগ্রহ করে প্রশাসকের সাথে যোগাযোগ করুন।"
+
+#
+# ─── Booking List ─────────────────────────────────────────────────
+#
+
+msgid "No bookings found"
+msgstr "কোন বুকিং পাওয়া যায়নি"
+
+msgid "No bookings match the current criteria."
+msgstr "বর্তমান মানদণ্ডের সাথে কোন বুকিং মেলে না।"
+
+msgid "Meeting"
+msgstr "মিটিং"
+
+msgid "min"
+msgstr "মিনিট"
+
+msgid "Host:"
+msgstr "হোস্ট:"
+
+msgid "Booked"
+msgstr "বুক করা হয়েছে"
+
+msgid "ID:"
+msgstr "আইডি:"
+
+msgid "Booking reference"
+msgstr "বুকিং রেফারেন্স"
+
+msgid "Notes:"
+msgstr "নোট:"
+
+msgid "Internal Note:"
+msgstr "অভ্যন্তরীণ নোট:"
+
+msgid "Attendee Comment:"
+msgstr "অংশগ্রহণকারীর মন্তব্য:"
+
+msgid "Mark Complete"
+msgstr "সম্পন্ন চিহ্নিত করুন"
+
+msgid "Confirm Booking"
+msgstr "বুকিং নিশ্চিত করুন"
+
+msgid "Generate Link"
+msgstr "লিংক তৈরি করুন"
+
+msgid "Send Link"
+msgstr "লিংক পাঠান"
+
+msgid "Cancel Booking"
+msgstr "বুকিং বাতিল করুন"
+
+msgid "Attendee"
+msgstr "অংশগ্রহণকারী"
+
+msgid "%d attendees"
+msgstr "%d জন অংশগ্রহণকারী"
+
+#
+# ─── Form Fields ──────────────────────────────────────────────────
+#
+
+msgid "First Name"
+msgstr "প্রথম নাম"
+
+msgid "Last Name"
+msgstr "শেষ নাম"
+
+msgid "Email"
+msgstr "ইমেইল"
+
+msgid "Phone"
+msgstr "ফোন"
+
+msgid "Bio"
+msgstr "জীবনী"
+
+msgid "First name and email are required."
+msgstr "প্রথম নাম এবং ইমেইল আবশ্যক।"
+
+#
+# ─── Status Texts ─────────────────────────────────────────────────
+#
+
+msgid "Pending"
+msgstr "অপেক্ষমাণ"
+
+msgid "Confirmed"
+msgstr "নিশ্চিত"
+
+msgid "Canceled"
+msgstr "বাতিল"
+
+#
+# ─── Error / Success Messages ────────────────────────────────────
+#
+
+msgid "Failed to load dashboard data"
+msgstr "ড্যাশবোর্ড ডেটা লোড করতে ব্যর্থ"
+
+msgid "Failed to load statistics"
+msgstr "পরিসংখ্যান লোড করতে ব্যর্থ"
+
+msgid "Failed to update profile."
+msgstr "প্রোফাইল আপডেট করতে ব্যর্থ।"
+
+msgid "Failed to update profile"
+msgstr "প্রোফাইল আপডেট করতে ব্যর্থ"
+
+msgid "Failed to load bookings"
+msgstr "বুকিং লোড করতে ব্যর্থ"
+
+msgid "Failed to update booking status."
+msgstr "বুকিং স্ট্যাটাস আপডেট করতে ব্যর্থ।"
+
+msgid "Failed to cancel booking"
+msgstr "বুকিং বাতিল করতে ব্যর্থ"
+
+msgid "Failed to reschedule booking"
+msgstr "বুকিং পুনঃসময়সূচী করতে ব্যর্থ"
+
+msgid "Failed to generate meeting link."
+msgstr "মিটিং লিংক তৈরি করতে ব্যর্থ।"
+
+msgid "Failed to generate join link."
+msgstr "জয়েন লিংক তৈরি করতে ব্যর্থ।"
+
+msgid "Booking status updated successfully."
+msgstr "বুকিং স্ট্যাটাস সফলভাবে আপডেট হয়েছে।"
+
+msgid "Booking status updated successfully"
+msgstr "বুকিং স্ট্যাটাস সফলভাবে আপডেট হয়েছে"
+
+msgid "Link copied to clipboard"
+msgstr "লিংক ক্লিপবোর্ডে কপি হয়েছে"
+
+msgid "Email sent successfully"
+msgstr "ইমেইল সফলভাবে পাঠানো হয়েছে"
+
+msgid "Join link generated successfully."
+msgstr "জয়েন লিংক সফলভাবে তৈরি হয়েছে।"
+
+msgid "Join link generated successfully"
+msgstr "জয়েন লিংক সফলভাবে তৈরি হয়েছে"
+
+msgid "Join link sent to attendees successfully."
+msgstr "জয়েন লিংক অংশগ্রহণকারীদের কাছে সফলভাবে পাঠানো হয়েছে।"
+
+msgid "Join link not found."
+msgstr "জয়েন লিংক পাওয়া যায়নি।"
+
+msgid "Booking cancelled successfully"
+msgstr "বুকিং সফলভাবে বাতিল হয়েছে"
+
+msgid "Booking rescheduled successfully. Awaiting host approval."
+msgstr "বুকিং সফলভাবে পুনঃসময়সূচী করা হয়েছে। হোস্টের অনুমোদনের অপেক্ষায়।"
+
+msgid "Booking not found"
+msgstr "বুকিং পাওয়া যায়নি"
+
+msgid "Booking not found."
+msgstr "বুকিং পাওয়া যায়নি।"
+
+msgid "This booking cannot be cancelled"
+msgstr "এই বুকিং বাতিল করা যাবে না"
+
+msgid "This booking cannot be rescheduled"
+msgstr "এই বুকিং পুনঃসময়সূচী করা যাবে না"
+
+#
+# ─── Admin Settings ───────────────────────────────────────────────
+#
+
+msgid "HB Customization"
+msgstr "এইচবি কাস্টমাইজেশন"
+
+msgid "Hydra Booking"
+msgstr "হাইড্রা বুকিং"
+
+msgid "General Settings"
+msgstr "সাধারণ সেটিংস"
+
+msgid "Dashboard Pages"
+msgstr "ড্যাশবোর্ড পৃষ্ঠা"
+
+msgid "Advanced Settings"
+msgstr "বিস্তারিত সেটিংস"
+
+msgid "Test Mode"
+msgstr "টেস্ট মোড"
+
+msgid "Plugin Information"
+msgstr "প্লাগইন তথ্য"
+
+msgid "Jitsi Integration Tools"
+msgstr "জিটসি ইন্টিগ্রেশন টুলস"
+
+msgid "Auto Registration Settings"
+msgstr "স্বয়ংক্রিয় নিবন্ধন সেটিংস"
+
+msgid "Enable Auto Registration"
+msgstr "স্বয়ংক্রিয় নিবন্ধন সক্রিয় করুন"
+
+msgid "Automatically create user accounts for attendees when they book a meeting."
+msgstr "অংশগ্রহণকারীরা মিটিং বুক করলে স্বয়ংক্রিয়ভাবে ব্যবহারকারী অ্যাকাউন্ট তৈরি করুন।"
+
+msgid "Send Welcome Email"
+msgstr "স্বাগতম ইমেইল পাঠান"
+
+msgid "Send welcome email with login credentials to auto-registered attendees."
+msgstr "স্বয়ংক্রিয়ভাবে নিবন্ধিত অংশগ্রহণকারীদের লগইন তথ্যসহ স্বাগতম ইমেইল পাঠান।"
+
+msgid "Attendee Dashboard Page"
+msgstr "অংশগ্রহণকারী ড্যাশবোর্ড পৃষ্ঠা"
+
+msgid "Attendee Dashboard Settings"
+msgstr "অংশগ্রহণকারী ড্যাশবোর্ড সেটিংস"
+
+msgid "Configure the attendee dashboard settings."
+msgstr "অংশগ্রহণকারী ড্যাশবোর্ড সেটিংস কনফিগার করুন।"
+
+msgid "Select the page that will serve as the attendee dashboard."
+msgstr "যে পৃষ্ঠাটি অংশগ্রহণকারী ড্যাশবোর্ড হিসাবে কাজ করবে সেটি নির্বাচন করুন।"
+
+msgid "Booking Management Settings"
+msgstr "বুকিং ব্যবস্থাপনা সেটিংস"
+
+msgid "Configure booking management options for attendees."
+msgstr "অংশগ্রহণকারীদের জন্য বুকিং ব্যবস্থাপনা বিকল্প কনফিগার করুন।"
+
+msgid "Configure automatic user registration for attendees who book meetings."
+msgstr "যেসব অংশগ্রহণকারী মিটিং বুক করেন তাদের জন্য স্বয়ংক্রিয় ব্যবহারকারী নিবন্ধন কনফিগার করুন।"
+
+msgid "Allow Booking Cancellation"
+msgstr "বুকিং বাতিলকরণের অনুমতি দিন"
+
+msgid "Allow attendees to cancel their bookings from the dashboard."
+msgstr "অংশগ্রহণকারীদের ড্যাশবোর্ড থেকে তাদের বুকিং বাতিল করার অনুমতি দিন।"
+
+msgid "Allow Booking Rescheduling"
+msgstr "বুকিং পুনঃসময়সূচীর অনুমতি দিন"
+
+msgid "Allow attendees to reschedule their bookings from the dashboard."
+msgstr "অংশগ্রহণকারীদের ড্যাশবোর্ড থেকে তাদের বুকিং পুনঃসময়সূচী করার অনুমতি দিন।"
+
+msgid "Cancellation Hours Limit"
+msgstr "বাতিলকরণের সময় সীমা (ঘন্টা)"
+
+msgid "Minimum hours before the meeting that cancellation is allowed."
+msgstr "মিটিংয়ের আগে সর্বনিম্ন কত ঘন্টা আগে বাতিল করা যাবে।"
+
+msgid "Rescheduling Hours Limit"
+msgstr "পুনঃসময়সূচীর সময় সীমা (ঘন্টা)"
+
+msgid "Minimum hours before the meeting that rescheduling is allowed."
+msgstr "মিটিংয়ের আগে সর্বনিম্ন কত ঘন্টা আগে পুনঃসময়সূচী করা যাবে।"
+
+#
+# ─── Password / Profile ──────────────────────────────────────────
+#
+
+msgid "Current password is incorrect"
+msgstr "বর্তমান পাসওয়ার্ড ভুল"
+
+msgid "Current password is incorrect."
+msgstr "বর্তমান পাসওয়ার্ড ভুল।"
+
+msgid "Current password is required to change password."
+msgstr "পাসওয়ার্ড পরিবর্তন করতে বর্তমান পাসওয়ার্ড আবশ্যক।"
+
+msgid "New passwords do not match"
+msgstr "নতুন পাসওয়ার্ড মিলছে না"
+
+msgid "Password changed successfully"
+msgstr "পাসওয়ার্ড সফলভাবে পরিবর্তিত হয়েছে"
+
+msgid "Password must be at least 8 characters long"
+msgstr "পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে"
+
+msgid "Password must be at least 8 characters long."
+msgstr "পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।"
+
+#
+# ─── Meeting Page ─────────────────────────────────────────────────
+#
+
+msgid "Invalid Meeting Link"
+msgstr "অবৈধ মিটিং লিংক"
+
+msgid "Authentication Required"
+msgstr "প্রমাণীকরণ প্রয়োজন"
+
+msgid "You must be logged in to access this meeting. Please log in and try again."
+msgstr "এই মিটিংয়ে অ্যাক্সেস করতে আপনাকে অবশ্যই লগইন করতে হবে। অনুগ্রহ করে লগইন করে আবার চেষ্টা করুন।"
+
+msgid "Access Denied"
+msgstr "প্রবেশ নিষেধ"
+
+msgid "This meeting link is not valid for your account. Please use the correct meeting link for your account."
+msgstr "এই মিটিং লিংকটি আপনার অ্যাকাউন্টের জন্য বৈধ নয়। অনুগ্রহ করে আপনার অ্যাকাউন্টের জন্য সঠিক মিটিং লিংক ব্যবহার করুন।"
+
+msgid "Meeting Not Found"
+msgstr "মিটিং পাওয়া যায়নি"
+
+msgid "The requested meeting could not be found or has been removed."
+msgstr "অনুরোধকৃত মিটিং পাওয়া যায়নি বা সরিয়ে দেওয়া হয়েছে।"
+
+msgid "Meeting Status Error"
+msgstr "মিটিং স্ট্যাটাস ত্রুটি"
+
+msgid "Unable to determine meeting status. Please try again later."
+msgstr "মিটিং স্ট্যাটাস নির্ধারণ করা সম্ভব নয়। অনুগ্রহ করে পরে আবার চেষ্টা করুন।"
+
+msgid "Go to Homepage"
+msgstr "হোমপেজে যান"
+
+msgid "Go Back"
+msgstr "পিছনে যান"
+
+msgid "Error Code: %s"
+msgstr "ত্রুটি কোড: %s"
+
+msgid "Your meeting will start at:"
+msgstr "আপনার মিটিং শুরু হবে:"
+
+msgid "Please keep this page open and refresh it closer to the meeting time."
+msgstr "অনুগ্রহ করে এই পৃষ্ঠাটি খোলা রাখুন এবং মিটিংয়ের সময় কাছাকাছি রিফ্রেশ করুন।"
+
+msgid "Refresh Page"
+msgstr "পৃষ্ঠা রিফ্রেশ করুন"
+
+msgid "This meeting has ended."
+msgstr "এই মিটিং শেষ হয়েছে।"
+
+msgid "Thank you for participating!"
+msgstr "অংশগ্রহণের জন্য ধন্যবাদ!"
+
+msgid "Loading meeting..."
+msgstr "মিটিং লোড হচ্ছে..."
+
+msgid "Welcome, %s"
+msgstr "স্বাগতম, %s"
+
+msgid "(Host)"
+msgstr "(হোস্ট)"
+
+#
+# ─── Security / Validation ───────────────────────────────────────
+#
+
+msgid "Security check failed."
+msgstr "নিরাপত্তা যাচাই ব্যর্থ।"
+
+msgid "Security verification failed. Please refresh the page and try again."
+msgstr "নিরাপত্তা যাচাই ব্যর্থ। অনুগ্রহ করে পৃষ্ঠাটি রিফ্রেশ করে আবার চেষ্টা করুন।"
+
+msgid "Permission denied."
+msgstr "অনুমতি নিষেধ।"
+
+msgid "Invalid booking ID"
+msgstr "অবৈধ বুকিং আইডি"
+
+msgid "Invalid booking ID."
+msgstr "অবৈধ বুকিং আইডি।"
+
+msgid "Invalid booking ID provided."
+msgstr "অবৈধ বুকিং আইডি প্রদান করা হয়েছে।"
+
+msgid "Invalid parameters."
+msgstr "অবৈধ প্যারামিটার।"
+
+msgid "Invalid role provided."
+msgstr "অবৈধ ভূমিকা প্রদান করা হয়েছে।"
+
+msgid "Invalid user ID provided."
+msgstr "অবৈধ ব্যবহারকারী আইডি প্রদান করা হয়েছে।"
+
+msgid "Missing required fields"
+msgstr "প্রয়োজনীয় ক্ষেত্র অনুপস্থিত"
+
+msgid "User not logged in."
+msgstr "ব্যবহারকারী লগইন করেননি।"
+
+msgid "You must be logged in to access meeting links."
+msgstr "মিটিং লিংক অ্যাক্সেস করতে আপনাকে অবশ্যই লগইন করতে হবে।"
+
+msgid "You must be logged in to join a meeting."
+msgstr "মিটিংয়ে যোগ দিতে আপনাকে অবশ্যই লগইন করতে হবে।"
+
+msgid "You do not have permission to access this meeting."
+msgstr "এই মিটিংয়ে প্রবেশের অনুমতি আপনার নেই।"
+
+msgid "User does not have access to this booking."
+msgstr "এই বুকিংয়ে ব্যবহারকারীর প্রবেশাধিকার নেই।"
+
+msgid "Unable to determine your role in this meeting."
+msgstr "এই মিটিংয়ে আপনার ভূমিকা নির্ধারণ করা সম্ভব নয়।"
+
+#
+# ─── Meeting / Token ──────────────────────────────────────────────
+#
+
+msgid "Meeting data not found."
+msgstr "মিটিং ডেটা পাওয়া যায়নি।"
+
+msgid "Meeting information not found. Please contact support."
+msgstr "মিটিং তথ্য পাওয়া যায়নি। অনুগ্রহ করে সাপোর্টের সাথে যোগাযোগ করুন।"
+
+msgid "Meeting is only available for confirmed bookings."
+msgstr "মিটিং শুধুমাত্র নিশ্চিত বুকিংয়ের জন্য উপলব্ধ।"
+
+msgid "Meeting link not found for this booking."
+msgstr "এই বুকিংয়ের জন্য মিটিং লিংক পাওয়া যায়নি।"
+
+msgid "Meeting token has expired."
+msgstr "মিটিং টোকেনের মেয়াদ শেষ হয়ে গেছে।"
+
+msgid "Host data not found."
+msgstr "হোস্ট ডেটা পাওয়া যায়নি।"
+
+msgid "Error joining meeting"
+msgstr "মিটিংয়ে যোগ দিতে ত্রুটি"
+
+msgid "Failed to decode token."
+msgstr "টোকেন ডিকোড করতে ব্যর্থ।"
+
+msgid "Failed to store meeting token."
+msgstr "মিটিং টোকেন সংরক্ষণ করতে ব্যর্থ।"
+
+msgid "Generated token exceeds maximum length."
+msgstr "তৈরি করা টোকেন সর্বোচ্চ দৈর্ঘ্য অতিক্রম করেছে।"
+
+msgid "Invalid token data structure."
+msgstr "অবৈধ টোকেন ডেটা কাঠামো।"
+
+msgid "Invalid token format provided."
+msgstr "অবৈধ টোকেন ফরম্যাট প্রদান করা হয়েছে।"
+
+msgid "Invalid token provided for storage."
+msgstr "সংরক্ষণের জন্য অবৈধ টোকেন প্রদান করা হয়েছে।"
+
+msgid "Missing required token field: %s"
+msgstr "প্রয়োজনীয় টোকেন ক্ষেত্র অনুপস্থিত: %s"
+
+msgid "Token exceeds maximum allowed length."
+msgstr "টোকেন সর্বোচ্চ অনুমোদিত দৈর্ঘ্য অতিক্রম করেছে।"
+
+msgid "Token is not valid for this site."
+msgstr "এই সাইটের জন্য টোকেনটি বৈধ নয়।"
+
+#
+# ─── Jitsi / Cron ─────────────────────────────────────────────────
+#
+
+msgid "Meeting Ending Soon - 5 Minutes Remaining"
+msgstr "মিটিং শীঘ্রই শেষ হচ্ছে - ৫ মিনিট বাকি"
+
+msgid "Every Minute"
+msgstr "প্রতি মিনিটে"
+
+msgid "No bookings found that need Jitsi meeting links. %s"
+msgstr "জিটসি মিটিং লিংক প্রয়োজন এমন কোন বুকিং পাওয়া যায়নি। %s"
+
+msgid "Successfully created Jitsi meeting links for %1$d bookings. %2$s"
+msgstr "%1$d টি বুকিংয়ের জন্য সফলভাবে জিটসি মিটিং লিংক তৈরি হয়েছে। %2$s"
+
+#
+# ─── Welcome Email ────────────────────────────────────────────────
+#
+
+msgid "Welcome to %s - Your Account Details"
+msgstr "%s -এ স্বাগতম - আপনার অ্যাকাউন্টের বিবরণ"
+
+msgid "Welcome, %s!"
+msgstr "স্বাগতম, %s!"
+
+#
+# ─── Additional Vue Frontend ──────────────────────────────────────
+#
+
+msgid "Reschedule"
+msgstr "পুনঃসময়সূচী"
+
+msgid "Timezone"
+msgstr "টাইমজোন"
+
+msgid "Today"
+msgstr "আজ"
+
+msgid "All History"
+msgstr "সমস্ত ইতিহাস"

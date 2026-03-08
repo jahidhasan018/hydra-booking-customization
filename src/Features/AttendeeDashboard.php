@@ -348,6 +348,7 @@ class AttendeeDashboard {
 		$bookings_table = $wpdb->prefix . 'tfhb_bookings';
 		$meetings_table = $wpdb->prefix . 'tfhb_meetings';
 		$hosts_table = $wpdb->prefix . 'tfhb_hosts';
+		$meta_table = $wpdb->prefix . 'tfhb_booking_meta';
 		
 		$current_time = current_time( 'mysql' );
 		
@@ -375,11 +376,13 @@ class AttendeeDashboard {
 				m.attendee_can_reschedule,
 				h.first_name as host_first_name,
 				h.last_name as host_last_name,
-				h.email as host_email
+				h.email as host_email,
+				mstart.value as meeting_started_at
 			FROM {$attendees_table} a
 			INNER JOIN {$bookings_table} b ON a.booking_id = b.id
 			LEFT JOIN {$meetings_table} m ON b.meeting_id = m.id
 			LEFT JOIN {$hosts_table} h ON a.host_id = h.id
+			LEFT JOIN {$meta_table} mstart ON b.id = mstart.booking_id AND mstart.meta_key = 'hbc_meeting_started_at'
 			WHERE a.user_id = %d
 				AND b.id IS NOT NULL
 				AND b.meeting_dates IS NOT NULL
@@ -422,14 +425,21 @@ class AttendeeDashboard {
 	 * @return bool
 	 */
 	private function can_cancel_booking( $booking ) {
-		// Allow cancellation if booking is at least 24 hours away.
+		if ( get_option( 'hbc_enable_test_mode', false ) ) {
+			return true;
+		}
+		
+		if ( ! get_option( 'hbc_allow_booking_cancellation', true ) ) {
+			return false;
+		}
+
+		// Allow cancellation if booking is in the future.
 		$booking_datetime = $booking->meeting_dates . ' ' . $booking->start_time;
 		$booking_time = strtotime( $booking_datetime );
 		$current_time = current_time( 'timestamp' );
-		$hours_until_booking = ( $booking_time - $current_time ) / 3600;
 		
 		$status = $booking->attendee_status ?? $booking->booking_status ?? '';
-		return $hours_until_booking >= 24 && in_array( $status, array( 'confirmed', 'pending' ), true );
+		return $booking_time > $current_time && in_array( $status, array( 'confirmed', 'pending' ), true );
 	}
 
 	/**
@@ -439,14 +449,21 @@ class AttendeeDashboard {
 	 * @return bool
 	 */
 	private function can_reschedule_booking( $booking ) {
-		// Allow rescheduling if booking is at least 48 hours away.
+		if ( get_option( 'hbc_enable_test_mode', false ) ) {
+			return true;
+		}
+
+		if ( ! get_option( 'hbc_allow_booking_rescheduling', true ) ) {
+			return false;
+		}
+
+		// Allow rescheduling if booking is in the future.
 		$booking_datetime = $booking->meeting_dates . ' ' . $booking->start_time;
 		$booking_time = strtotime( $booking_datetime );
 		$current_time = current_time( 'timestamp' );
-		$hours_until_booking = ( $booking_time - $current_time ) / 3600;
 		
 		$status = $booking->attendee_status ?? $booking->booking_status ?? '';
-		return $hours_until_booking >= 48 && in_array( $status, array( 'confirmed', 'pending' ), true );
+		return $booking_time > $current_time && in_array( $status, array( 'confirmed', 'pending' ), true );
 	}
 
 	/**
@@ -559,7 +576,10 @@ class AttendeeDashboard {
 		$booking_id = intval( $_POST['booking_id'] ?? 0 );
 		$new_date = sanitize_text_field( $_POST['new_date'] ?? '' );
 		$new_time = sanitize_text_field( $_POST['new_time'] ?? '' );
-		$user_id = get_current_user_id();
+		$duration = intval( $_POST['duration'] ?? 30 );
+		$reason = sanitize_textarea_field( $_POST['reason'] ?? '' );
+		$notify_host = filter_var( $_POST['notify_host'] ?? true, FILTER_VALIDATE_BOOLEAN );
+		$send_confirmation = filter_var( $_POST['send_confirmation'] ?? true, FILTER_VALIDATE_BOOLEAN );
 		
 		if ( ! $booking_id || ! $new_date || ! $new_time ) {
 			wp_send_json_error( __( 'Missing required fields', 'hydra-booking-customization' ) );
@@ -569,12 +589,14 @@ class AttendeeDashboard {
 		global $wpdb;
 		$attendees_table = $wpdb->prefix . 'tfhb_attendees';
 		$bookings_table = $wpdb->prefix . 'tfhb_bookings';
+		$hosts_table = $wpdb->prefix . 'tfhb_hosts';
 		
 		$booking = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT b.*, a.id as attendee_id 
+				"SELECT b.*, a.id as attendee_id, a.email as email, h.email as host_email 
 				FROM {$bookings_table} b 
 				INNER JOIN {$attendees_table} a ON b.id = a.booking_id 
+				LEFT JOIN {$hosts_table} h ON a.host_id = h.id
 				WHERE b.id = %d AND a.user_id = %d",
 				$booking_id,
 				$user_id
@@ -606,7 +628,20 @@ class AttendeeDashboard {
 			// Invalidate caches.
 			CacheManager::invalidate_attendee( $user_id );
 
-			// Send reschedule notification.
+			// Send notifications.
+			if ( $notify_host && ! empty( $booking->host_email ) ) {
+				$subject = 'Booking Rescheduled';
+				$message = sprintf( "A booking has been rescheduled to %s at %s.\n\nReason: %s", $new_date, $new_time, $reason ?: 'Not provided' );
+				wp_mail( $booking->host_email, $subject, $message );
+			}
+
+			if ( $send_confirmation && ! empty( $booking->email ) ) {
+				$subject = 'Your Booking is Rescheduled';
+				$message = sprintf( "Your booking has been rescheduled to %s at %s. Awaiting host approval.", $new_date, $new_time );
+				wp_mail( $booking->email, $subject, $message );
+			}
+
+			// Keep existing hook in case other systems depend on it.
 			do_action( 'hbc_booking_rescheduled', $booking_id, $user_id, $new_date, $new_time );
 			
 			wp_send_json_success( __( 'Booking rescheduled successfully. Awaiting host approval.', 'hydra-booking-customization' ) );
@@ -628,12 +663,13 @@ class AttendeeDashboard {
             'ID'          => $user_id,
             'first_name'  => sanitize_text_field( $_POST['first_name'] ?? '' ),
             'last_name'   => sanitize_text_field( $_POST['last_name'] ?? '' ),
-            'user_email'  => sanitize_email( $_POST['email'] ?? $_POST['user_email'] ?? '' ),
-            'description' => sanitize_textarea_field( $_POST['description'] ?? '' ),
+            'description' => sanitize_textarea_field( $_POST['bio'] ?? '' ),
         );
 		
 		$updated = wp_update_user( $user_data );
 		
+		update_user_meta( $user_id, 'phone', sanitize_text_field( $_POST['phone'] ?? '' ) );
+
 		if ( is_wp_error( $updated ) ) {
 			wp_send_json_error( $updated->get_error_message() );
 		} else {

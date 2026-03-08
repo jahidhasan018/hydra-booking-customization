@@ -20,33 +20,33 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="form-label">Meeting Title</label>
-                <p class="text-gray-700">{{ booking.data?.meeting_title || 'N/A' }}</p>
+                <p class="text-gray-700">{{ (booking.data || booking)?.meeting_title || 'N/A' }}</p>
               </div>
               <div>
                 <label class="form-label">Date</label>
-                <p class="text-gray-700">{{ booking.data?.meeting_dates || 'N/A' }}</p>
+                <p class="text-gray-700">{{ (booking.data || booking)?.meeting_dates || 'N/A' }}</p>
               </div>
               <div>
                 <label class="form-label">Time</label>
-                <p class="text-gray-700">{{ booking.data?.start_time || 'N/A' }} - {{ booking.data?.end_time || 'N/A' }}</p>
+                <p class="text-gray-700">{{ (booking.data || booking)?.start_time || 'N/A' }} - {{ (booking.data || booking)?.end_time || 'N/A' }}</p>
               </div>
               <div>
                 <label class="form-label">Duration</label>
-                <p class="text-gray-700">{{ booking.data?.duration || 'N/A' }} minutes</p>
+                <p class="text-gray-700">{{ (booking.data || booking)?.duration || 'N/A' }} minutes</p>
               </div>
               <div>
                 <label class="form-label">Booking Type</label>
-                <p class="text-gray-700">{{ booking.data?.booking_type || 'N/A' }}</p>
+                <p class="text-gray-700">{{ (booking.data || booking)?.booking_type || 'N/A' }}</p>
               </div>
               <div>
                 <label class="form-label">Status</label>
-                <span :class="getStatusClass(booking.data?.status)" class="badge">
-                  {{ getStatusText(booking.data?.status) || booking.data?.status || 'N/A' }}
+                <span :class="getStatusClass((booking.data || booking)?.status)" class="badge">
+                  {{ getStatusText((booking.data || booking)?.status) || (booking.data || booking)?.status || 'N/A' }}
                 </span>
               </div>
-              <div v-if="booking.data?.internal_note" class="md:col-span-2">
+              <div v-if="(booking.data || booking)?.internal_note" class="md:col-span-2">
                 <label class="form-label">Internal Note</label>
-                <p class="text-gray-700">{{ booking.data.internal_note }}</p>
+                <p class="text-gray-700">{{ (booking.data || booking).internal_note }}</p>
               </div>
             </div>
           </div>
@@ -57,41 +57,38 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="form-label">Name</label>
-                <p class="text-gray-700">{{ getAttendeeName(booking.data?.attendees) || 'N/A' }}</p>
+                <p class="text-gray-700">{{ getAttendeeName((booking.data || booking)?.attendees) || 'N/A' }}</p>
               </div>
               <div>
                 <label class="form-label">Email</label>
-                <p class="text-gray-700">{{ getAttendeeEmail(booking.data?.attendees) || 'N/A' }}</p>
+                <p class="text-gray-700">{{ getAttendeeEmail((booking.data || booking)?.attendees) || 'N/A' }}</p>
               </div>
               <div>
                 <label class="form-label">Attendee ID</label>
-                <p class="text-gray-700">{{ booking.data?.attendee_id || 'N/A' }}</p>
+                <p class="text-gray-700">{{ (booking.data || booking)?.attendee_id == 0 || (booking.data || booking)?.attendee_id === '0' || !(booking.data || booking)?.attendee_id ? 'Guest User' : (booking.data || booking)?.attendee_id }}</p>
               </div>
               <div>
-                <label class="form-label">Booking ID</label>
-                <p class="text-gray-700">{{ booking.data?.id || booking.data?.booking_id || 'N/A' }}</p>
+                <label class="form-label">Booking Reference</label>
+                <p class="text-gray-700">HB-{{ String((booking.data || booking)?.id || (booking.data || booking)?.booking_id || '000').padStart(6, '0') }}</p>
               </div>
               <div>
-                <label class="form-label">Created At</label>
-                <p class="text-gray-700">{{ formatDateTime(booking.data?.created_at) || 'N/A' }}</p>
-              </div>
-              <div v-if="booking.data?.attendee_comment" class="md:col-span-2">
-                <label class="form-label">Comment</label>
-                <p class="text-gray-700">{{ booking.data.attendee_comment }}</p>
-              </div>
-              <div class="md:col-span-2">
                 <label class="form-label">Booked At</label>
-                <p class="text-gray-700">{{ formatDateTime(booking.data?.created_at) }}</p>
+                <p class="text-gray-700">{{ formatDateTime((booking.data || booking)?.created_at) || formatDateTime((booking.data || booking)?.booking_created_at) || 'N/A' }}</p>
               </div>
+              <div v-if="(booking.data || booking)?.attendee_comment" class="md:col-span-2">
+                <label class="form-label">Comment</label>
+                <p class="text-gray-700">{{ (booking.data || booking).attendee_comment }}</p>
+              </div>
+
             </div>
           </div>
 
           <!-- Activity Timeline -->
-          <div v-if="booking.data?.activity && booking.data.activity.length" class="bg-green-50 p-4 rounded-lg">
+          <div v-if="(booking.data || booking)?.activity && (booking.data || booking).activity.length" class="bg-green-50 p-4 rounded-lg">
             <h4 class="text-lg font-medium text-gray-900 mb-4">Activity Details</h4>
             <div class="space-y-3">
               <div
-                v-for="activity in booking.data.activity"
+                v-for="activity in (booking.data || booking).activity"
                 :key="activity.id"
                 class="flex items-start space-x-3 p-3 bg-white rounded border"
               >
@@ -112,9 +109,9 @@
           </div>
 
           <!-- Join Link Information -->
-          <div v-if="booking.data?.join_links && booking.data.join_links.length > 0" class="bg-purple-50 p-4 rounded-lg">
+          <div v-if="(booking.data || booking)?.join_links && (booking.data || booking).join_links.length > 0" class="bg-purple-50 p-4 rounded-lg">
             <h4 class="text-lg font-medium text-gray-900 mb-4">Join Links</h4>
-            <div v-for="(link, index) in booking.data.join_links" :key="index" class="flex items-center justify-between mb-2">
+            <div v-for="(link, index) in (booking.data || booking).join_links" :key="index" class="flex items-center justify-between mb-2">
               <code class="bg-white px-3 py-2 rounded border text-sm font-mono">
                 {{ link }}
               </code>
@@ -132,11 +129,11 @@
           </div>
 
           <!-- Custom Fields -->
-          <div v-if="booking.data?.custom_fields && Object.keys(booking.data.custom_fields).length" class="bg-yellow-50 p-4 rounded-lg">
+          <div v-if="(booking.data || booking)?.custom_fields && Object.keys((booking.data || booking).custom_fields).length" class="bg-yellow-50 p-4 rounded-lg">
             <h4 class="text-lg font-medium text-gray-900 mb-4">Additional Information</h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div
-                v-for="(value, key) in booking.data.custom_fields"
+                v-for="(value, key) in (booking.data || booking).custom_fields"
                 :key="key"
                 class="space-y-1"
               >
@@ -158,7 +155,7 @@
           Close
         </button>
         <button
-          v-if="booking && getAttendeeEmail(booking.data?.attendees)"
+          v-if="booking && getAttendeeEmail((booking.data || booking)?.attendees)"
           @click="sendEmail"
           class="btn-primary"
         >

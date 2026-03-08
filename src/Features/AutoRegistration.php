@@ -40,28 +40,22 @@ class AutoRegistration {
 	 * @param object $attendee_booking Attendee booking object.
 	 */
 	public function auto_create_attendee_account( $attendee_booking ) {
-		// Debug: Log that the method is being called.
-		error_log( 'HBC AutoRegistration: auto_create_attendee_account called with: ' . print_r( $attendee_booking, true ) );
-		
 		// Check if auto-registration is enabled.
 		if ( ! get_option( 'hbc_auto_registration', true ) ) {
-			error_log( 'HBC AutoRegistration: Auto-registration is disabled in auto_create_attendee_account' );
 			return;
 		}
 
 		// Validate attendee booking object.
 		if ( ! $attendee_booking || ! isset( $attendee_booking->email ) ) {
-			error_log( 'HBC AutoRegistration: Invalid attendee booking object' );
 			return;
 		}
 
 		$attendee_email = sanitize_email( $attendee_booking->email );
 		$attendee_name = isset( $attendee_booking->attendee_name ) ? sanitize_text_field( $attendee_booking->attendee_name ) : '';
 
-		// Check if user is currently logged in
+		// Check if user is currently logged in.
 		if ( is_user_logged_in() ) {
 			$current_user = wp_get_current_user();
-			error_log( 'HBC AutoRegistration: User is logged in with ID: ' . $current_user->ID );
 			
 			// Associate booking with logged-in user
 			if ( isset( $attendee_booking->id ) ) {
@@ -75,7 +69,6 @@ class AutoRegistration {
 
 		// Check if user already exists (for non-logged-in users).
 		if ( email_exists( $attendee_email ) ) {
-			error_log( 'HBC AutoRegistration: User already exists with email: ' . $attendee_email );
 			
 			// Update existing user with attendee ID if not already set.
 			$existing_user = get_user_by( 'email', $attendee_email );
@@ -102,7 +95,9 @@ class AutoRegistration {
 			// Fire action for other plugins to hook into.
 			do_action( 'hbc_after_auto_registration', $user_id, $attendee_booking );
 
-			error_log( 'HBC AutoRegistration: Successfully created user with ID: ' . $user_id );
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'HBC AutoRegistration: Created user ID ' . $user_id . ' for ' . $attendee_email );
+			}
 		} else {
 			error_log( 'HBC AutoRegistration: Failed to create user for email: ' . $attendee_email );
 		}
@@ -112,12 +107,8 @@ class AutoRegistration {
 	 * Intercept booking confirmation to handle auto registration.
 	 */
 	public function intercept_booking_confirmation() {
-		// Debug: Log that the method is being called.
-		error_log( 'HBC AutoRegistration: intercept_booking_confirmation called' );
-		
-		// Check if user is logged in - skip auto-registration for logged-in users
+		// Skip auto-registration for logged-in users.
 		if ( is_user_logged_in() ) {
-			error_log( 'HBC AutoRegistration: User is logged in, skipping auto-registration in intercept' );
 			return;
 		}
 		
@@ -130,7 +121,6 @@ class AutoRegistration {
 
 		// Check if auto-registration is enabled.
 		if ( ! get_option( 'hbc_auto_registration', true ) ) {
-			error_log( 'HBC AutoRegistration: Auto-registration is disabled' );
 			return;
 		}
 
@@ -143,7 +133,6 @@ class AutoRegistration {
 		// Check if user already exists.
 		$existing_user = get_user_by( 'email', $attendee_email );
 		if ( $existing_user ) {
-			error_log( 'HBC AutoRegistration: User already exists, skipping registration' );
 			return;
 		}
 

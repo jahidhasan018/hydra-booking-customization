@@ -55,11 +55,9 @@
                   id="email"
                   v-model="form.email"
                   type="email"
-                  class="form-input"
-                  :class="{ 'border-red-500': errors.email }"
-                  required
+                  class="form-input bg-gray-100 cursor-not-allowed"
+                  disabled
                 />
-                <p v-if="errors.email" class="form-error">{{ errors.email }}</p>
               </div>
 
               <div>
@@ -89,26 +87,7 @@
               <p v-if="errors.bio" class="form-error">{{ errors.bio }}</p>
             </div>
 
-            <!-- Timezone -->
-            <div>
-              <label for="timezone" class="form-label">Timezone</label>
-              <select
-                id="timezone"
-                v-model="form.timezone"
-                class="form-input"
-                :class="{ 'border-red-500': errors.timezone }"
-              >
-                <option value="">Select Timezone</option>
-                <option
-                  v-for="tz in timezones"
-                  :key="tz.value"
-                  :value="tz.value"
-                >
-                  {{ tz.label }}
-                </option>
-              </select>
-              <p v-if="errors.timezone" class="form-error">{{ errors.timezone }}</p>
-            </div>
+
 
             <!-- Password Change Section -->
             <div class="border-t pt-6">
@@ -169,23 +148,6 @@
                   <span class="ml-2 text-sm text-gray-700">Email notifications for booking updates</span>
                 </label>
 
-                <label class="flex items-center">
-                  <input
-                    v-model="form.sms_notifications"
-                    type="checkbox"
-                    class="form-checkbox"
-                  />
-                  <span class="ml-2 text-sm text-gray-700">SMS notifications for booking reminders</span>
-                </label>
-
-                <label class="flex items-center">
-                  <input
-                    v-model="form.calendar_sync"
-                    type="checkbox"
-                    class="form-checkbox"
-                  />
-                  <span class="ml-2 text-sm text-gray-700">Sync bookings with calendar</span>
-                </label>
               </div>
             </div>
           </div>
@@ -229,13 +191,10 @@ export default {
       email: '',
       phone: '',
       bio: '',
-      timezone: '',
       current_password: '',
       new_password: '',
       confirm_password: '',
-      email_notifications: true,
-      sms_notifications: false,
-      calendar_sync: true
+      email_notifications: true
     })
 
     const errors = reactive({})
@@ -245,20 +204,7 @@ export default {
       message: ''
     })
 
-    // Common timezones
-    const timezones = [
-      { value: 'America/New_York', label: 'Eastern Time (ET)' },
-      { value: 'America/Chicago', label: 'Central Time (CT)' },
-      { value: 'America/Denver', label: 'Mountain Time (MT)' },
-      { value: 'America/Los_Angeles', label: 'Pacific Time (PT)' },
-      { value: 'Europe/London', label: 'Greenwich Mean Time (GMT)' },
-      { value: 'Europe/Paris', label: 'Central European Time (CET)' },
-      { value: 'Asia/Tokyo', label: 'Japan Standard Time (JST)' },
-      { value: 'Asia/Shanghai', label: 'China Standard Time (CST)' },
-      { value: 'Asia/Kolkata', label: 'India Standard Time (IST)' },
-      { value: 'Asia/Dhaka', label: 'Bangladesh Standard Time (BST)' },
-      { value: 'Australia/Sydney', label: 'Australian Eastern Time (AET)' }
-    ]
+
 
     const showAlert = (type, message) => {
       // Use toast notifications instead of legacy alert system
@@ -288,11 +234,7 @@ export default {
         errors.last_name = 'Last name is required'
       }
 
-      if (!form.email.trim()) {
-        errors.email = 'Email is required'
-      } else if (!validateEmail(form.email)) {
-        errors.email = 'Please enter a valid email address'
-      }
+
 
       // Optional phone validation
       if (form.phone && !validatePhone(form.phone)) {
@@ -334,10 +276,7 @@ export default {
           email: form.email,
           phone: form.phone,
           bio: form.bio,
-          timezone: form.timezone,
-          email_notifications: form.email_notifications,
-          sms_notifications: form.sms_notifications,
-          calendar_sync: form.calendar_sync
+          email_notifications: form.email_notifications
         }
 
         // Include password data if provided
@@ -375,7 +314,6 @@ export default {
       form,
       errors,
       alert,
-      timezones,
       showAlert,
       validateForm,
       handleSubmit

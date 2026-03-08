@@ -5,7 +5,7 @@
       <div class="bg-white p-6 rounded-lg shadow-lg">
         <div class="flex items-center space-x-3">
           <div class="loading-spinner"></div>
-          <span class="text-gray-700">Loading...</span>
+          <span class="text-gray-700">{{ t('loading') }}</span>
         </div>
       </div>
     </div>
@@ -13,8 +13,8 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <!-- Header -->
       <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Host Dashboard</h1>
-        <p class="mt-2 text-gray-600">Manage your meetings, bookings, and join links</p>
+        <h1 class="text-3xl font-bold text-gray-900">{{ t('host_dashboard') }}</h1>
+        <p class="mt-2 text-gray-600">{{ t('manage_meetings_bookings') }}</p>
       </div>
 
       <!-- Alert Messages -->
@@ -39,7 +39,7 @@
               </div>
               <div class="ml-4">
                 <p class="text-2xl font-semibold text-gray-900">{{ stats.today_meetings || 0 }}</p>
-                <p class="text-sm text-gray-600">Today's Meetings</p>
+                <p class="text-sm text-gray-600">{{ t('todays_meetings') }}</p>
               </div>
             </div>
           </div>
@@ -57,7 +57,7 @@
               </div>
               <div class="ml-4">
                 <p class="text-2xl font-semibold text-gray-900">{{ stats.upcoming_meetings || 0 }}</p>
-                <p class="text-sm text-gray-600">Upcoming</p>
+                <p class="text-sm text-gray-600">{{ t('upcoming') }}</p>
               </div>
             </div>
           </div>
@@ -75,7 +75,7 @@
               </div>
               <div class="ml-4">
                 <p class="text-2xl font-semibold text-gray-900">{{ stats.completed_meetings || 0 }}</p>
-                <p class="text-sm text-gray-600">Completed</p>
+                <p class="text-sm text-gray-600">{{ t('completed') }}</p>
               </div>
             </div>
           </div>
@@ -92,8 +92,8 @@
                 </div>
               </div>
               <div class="ml-4">
-                <p class="text-2xl font-semibold text-gray-900">{{ stats.active_join_links || 0 }}</p>
-                <p class="text-sm text-gray-600">Active Links</p>
+                <p class="text-2xl font-semibold text-gray-900">{{ stats.cancelled_meetings || 0 }}</p>
+                <p class="text-sm text-gray-600">{{ t('cancelled', 'Cancelled') }}</p>
               </div>
             </div>
           </div>
@@ -124,12 +124,12 @@
         <!-- Bookings Tab -->
         <div v-show="activeTab === 'bookings'" class="p-6">
           <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-medium text-gray-900">Bookings</h3>
+            <h3 class="text-lg font-medium text-gray-900">{{ t('bookings') }}</h3>
             <button @click="loadBookings(activeFilter)" class="btn-primary">
               <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
               </svg>
-              Refresh
+              {{ t('refresh') }}
             </button>
           </div>
 
@@ -174,58 +174,38 @@
           />
         </div>
 
-        <!-- Join Links Tab -->
-        <div v-show="activeTab === 'join-links'" class="p-6">
-          <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-medium text-gray-900">Join Links Management</h3>
-            <button @click="openJoinLinkModal" class="btn-primary">
-              Generate New Link
-            </button>
-          </div>
-
-          <JoinLinksList
-            :join-links="joinLinks"
-            @send-link="sendJoinLink"
-            @copy-link="copyJoinLink"
-          />
-        </div>
-
         <!-- Profile Tab -->
         <div v-show="activeTab === 'profile'" class="p-6">
           <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-medium text-gray-900">Profile Settings</h3>
+            <h3 class="text-lg font-medium text-gray-900">{{ t('profile_settings') }}</h3>
             <button @click="openProfileModal" class="btn-primary">
               <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
               </svg>
-              Edit Profile
+              {{ t('edit_profile') }}
             </button>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label class="form-label">First Name</label>
-              <p class="text-gray-700">{{ profile.first_name || 'Not set' }}</p>
+              <label class="form-label">{{ t('first_name') }}</label>
+              <p class="text-gray-700">{{ profile.first_name || t('not_set') }}</p>
             </div>
             <div>
-              <label class="form-label">Last Name</label>
-              <p class="text-gray-700">{{ profile.last_name || 'Not set' }}</p>
+              <label class="form-label">{{ t('last_name') }}</label>
+              <p class="text-gray-700">{{ profile.last_name || t('not_set') }}</p>
             </div>
             <div>
-              <label class="form-label">Email</label>
-              <p class="text-gray-700">{{ profile.email || 'Not set' }}</p>
+              <label class="form-label">{{ t('email') }}</label>
+              <p class="text-gray-700">{{ profile.email || t('not_set') }}</p>
             </div>
             <div>
-              <label class="form-label">Phone</label>
-              <p class="text-gray-700">{{ profile.phone || 'Not set' }}</p>
+              <label class="form-label">{{ t('phone') }}</label>
+              <p class="text-gray-700">{{ profile.phone || t('not_set') }}</p>
             </div>
             <div class="md:col-span-2">
-              <label class="form-label">Bio</label>
-              <p class="text-gray-700">{{ profile.bio || 'Not set' }}</p>
-            </div>
-            <div>
-              <label class="form-label">Timezone</label>
-              <p class="text-gray-700">{{ profile.timezone || 'Not set' }}</p>
+              <label class="form-label">{{ t('bio') }}</label>
+              <p class="text-gray-700">{{ profile.bio || t('not_set') }}</p>
             </div>
           </div>
         </div>
@@ -233,12 +213,12 @@
         <!-- History Tab -->
         <div v-show="activeTab === 'history'" class="p-6">
           <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-medium text-gray-900">Meeting History</h3>
+            <h3 class="text-lg font-medium text-gray-900">{{ t('meeting_history') }}</h3>
             <button @click="loadBookings('history')" class="btn-primary">
               <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
               </svg>
-              Refresh
+              {{ t('refresh') }}
             </button>
           </div>
 
@@ -257,13 +237,6 @@
       @close="showBookingModal = false"
     />
 
-    <!-- Join Link Modal -->
-    <JoinLinkModal
-      v-if="showJoinLinkModal"
-      @close="showJoinLinkModal = false"
-      @save="generateJoinLink"
-    />
-
     <!-- Profile Edit Modal -->
     <ProfileModal
       v-if="showProfileModal"
@@ -276,21 +249,18 @@
 
 <script>
 import { ref, reactive, onMounted, watch, inject } from 'vue'
+import { __ } from '../utils/i18n.js'
 import { hostAPI } from '../utils/api.js'
 import { formatDateTime, getStatusClass, getStatusText, handleApiError, copyToClipboard } from '../utils/helpers.js'
 import BookingsList from './BookingsList.vue'
-import JoinLinksList from './JoinLinksList.vue'
 import BookingDetailsModal from './modals/BookingDetailsModal.vue'
-import JoinLinkModal from './modals/JoinLinkModal.vue'
 import ProfileModal from './modals/ProfileModal.vue'
 
 export default {
   name: 'HostDashboard',
   components: {
     BookingsList,
-    JoinLinksList,
     BookingDetailsModal,
-    JoinLinkModal,
     ProfileModal
   },
   setup() {
@@ -301,7 +271,6 @@ export default {
     const isLoading = ref(false)
     const activeTab = ref('bookings')
     const bookings = ref([])
-    const joinLinks = ref([])
     const profile = reactive({})
     const stats = reactive({})
     const alert = reactive({
@@ -313,24 +282,24 @@ export default {
 
     // Modal states
     const showBookingModal = ref(false)
-    const showJoinLinkModal = ref(false)
     const showProfileModal = ref(false)
     const selectedBooking = ref(null)
 
+    // Translation helper for templates.
+    const t = (key, fallback) => __(key, fallback)
+
     // Tab configuration
     const tabs = [
-      { id: 'bookings', name: 'Bookings' },
-      { id: 'join-links', name: 'Join Links' },
-      { id: 'profile', name: 'Profile' }
+      { id: 'bookings', name: t('bookings', 'Bookings') },
+      { id: 'profile', name: t('profile', 'Profile') }
     ]
 
     // Filter configuration
     const filters = [
-      { id: 'upcoming', name: 'Upcoming', icon: 'calendar' },
-      { id: 'today', name: 'Today', icon: 'clock' },
-      { id: 'completed', name: 'Completed', icon: 'check' },
-      { id: 'cancelled', name: 'Cancelled', icon: 'x' },
-      { id: 'history', name: 'All History', icon: 'archive' }
+      { id: 'upcoming', name: t('upcoming', 'Upcoming'), icon: 'calendar' },
+      { id: 'completed', name: t('completed', 'Completed'), icon: 'check' },
+      { id: 'cancelled', name: t('cancelled', 'Cancelled'), icon: 'x' },
+      { id: 'history', name: t('all_history', 'All History'), icon: 'archive' }
     ]
 
     // Methods
@@ -377,19 +346,11 @@ export default {
         const now = new Date()
         
         // Apply client-side filtering for specific statuses and dates
-        if (filterType === 'today') {
-          // Only show today's bookings that are confirmed or pending
+        if (filterType === 'upcoming') {
+          // Only show future bookings (including today) that are confirmed or pending
           allBookings = allBookings.filter(booking => {
             const bookingDate = booking.meeting_dates
-            return bookingDate === today && 
-                   (booking.status === 'confirmed' || booking.status === 'pending')
-          })
-        } else if (filterType === 'upcoming') {
-          // Only show future bookings (not today) that are confirmed or pending
-          allBookings = allBookings.filter(booking => {
-            const bookingDate = booking.meeting_dates
-            const bookingDateTime = new Date(bookingDate + ' ' + (booking.start_time || '00:00:00'))
-            return bookingDate > today && 
+            return bookingDate >= today && 
                    (booking.status === 'confirmed' || booking.status === 'pending')
           })
         } else if (filterType === 'completed') {
@@ -411,19 +372,6 @@ export default {
       }
     }
 
-    const loadJoinLinks = async () => {
-      try {
-        const data = await hostAPI.getJoinLinks()
-        
-        // Check if data has join_links property or if it's the array directly
-        joinLinks.value = data.join_links || (Array.isArray(data) ? data : [])
-        
-      } catch (error) {
-        console.error('Join links load error:', error) // Debug log
-        showAlert('error', handleApiError(error))
-      }
-    }
-
     const loadProfile = async () => {
       try {
         const data = await hostAPI.getProfile()
@@ -440,7 +388,6 @@ export default {
             display_name: profileData.display_name || '',
             phone: hostData.phone_number || '',
             bio: profileData.description || hostData.about || '',
-            timezone: hostData.time_zone || '',
             avatar: hostData.avatar || '',
             featured_image: hostData.featured_image || '',
             status: hostData.status || '',
@@ -464,7 +411,7 @@ export default {
         
       } catch (error) {
         console.error('Failed to load stats:', error)
-        showAlert('error', 'Failed to load statistics')
+        showAlert('error', t('error_loading_stats', 'Failed to load statistics'))
       }
     }
 
@@ -472,7 +419,7 @@ export default {
       try {
         isLoading.value = true
         await hostAPI.updateBookingStatus(bookingId, status)
-        showAlert('success', `Booking ${status} successfully`)
+        showAlert('success', t('booking_updated', 'Booking status updated successfully'))
         await loadBookings(activeTab.value)
         await loadStats()
       } catch (error) {
@@ -506,50 +453,6 @@ export default {
       }
     }
 
-    const openJoinLinkModal = () => {
-      showJoinLinkModal.value = true
-    }
-
-    const generateJoinLink = async (linkData) => {
-      try {
-        isLoading.value = true
-        await hostAPI.generateJoinLink(
-          linkData.meetingId,
-          linkData.linkType,
-          linkData.customUrl
-        )
-        showJoinLinkModal.value = false
-        showAlert('success', 'Join link generated successfully')
-        await loadJoinLinks()
-        await loadStats()
-      } catch (error) {
-        showAlert('error', handleApiError(error))
-      } finally {
-        isLoading.value = false
-      }
-    }
-
-    const sendJoinLink = async (linkId) => {
-      try {
-        isLoading.value = true
-        await hostAPI.sendJoinLink(linkId)
-        showAlert('success', 'Join link sent to attendees')
-      } catch (error) {
-        showAlert('error', handleApiError(error))
-      } finally {
-        isLoading.value = false
-      }
-    }
-
-    const copyJoinLink = async (url) => {
-      const success = await copyToClipboard(url)
-      if (success) {
-        showAlert('success', 'Join link copied to clipboard')
-      } else {
-        showAlert('error', 'Failed to copy link')
-      }
-    }
-
     const openProfileModal = () => {
       showProfileModal.value = true
     }
@@ -560,7 +463,7 @@ export default {
         await hostAPI.updateProfile(profileData)
         Object.assign(profile, profileData)
         showProfileModal.value = false
-        showAlert('success', 'Profile updated successfully')
+        showAlert('success', t('profile_updated', 'Profile updated successfully'))
       } catch (error) {
         showAlert('error', handleApiError(error))
       } finally {
@@ -574,12 +477,11 @@ export default {
       try {
         await Promise.all([
           loadBookings(activeFilter.value),
-          loadJoinLinks(),
           loadProfile(),
           loadStats()
         ])
       } catch (error) {
-        showAlert('error', 'Failed to load dashboard data')
+        showAlert('error', t('error_loading_data', 'Failed to load dashboard data'))
       } finally {
         isLoading.value = false
       }
@@ -589,8 +491,6 @@ export default {
     watch(activeTab, (newTab) => {
       if (newTab === 'bookings') {
         loadBookings(activeFilter.value)
-      } else if (newTab === 'join-links') {
-        loadJoinLinks()
       }
     })
 
@@ -609,16 +509,17 @@ export default {
       activeTab,
       activeFilter,
       bookings,
-      joinLinks,
       profile,
       stats,
       alert,
       showBookingModal,
-      showJoinLinkModal,
       showProfileModal,
       selectedBooking,
       tabs,
       filters,
+
+      // Translation
+      t,
 
       // Methods
       showAlert,
@@ -626,10 +527,6 @@ export default {
       loadBookings,
       updateBookingStatus,
       viewBookingDetails,
-      openJoinLinkModal,
-      generateJoinLink,
-      sendJoinLink,
-      copyJoinLink,
       openProfileModal,
       updateProfile,
 
